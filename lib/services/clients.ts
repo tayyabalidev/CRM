@@ -3,6 +3,7 @@ import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeSearch } from "@/lib/utils/text";
 import { toNumber } from "@/lib/utils/money";
+import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
 import { zonedDateKey } from "@/lib/utils/dates";
 import type { InvoiceStatus, NoteVisibility, Priority, ProjectStatus, TaskStatus } from "@/types/index";
 import type { Tables } from "@/types/database";
@@ -167,9 +168,21 @@ export async function listClientOptions(workspaceId: string, includeId?: string)
     .from("clients")
     .select("id, name, status")
     .eq("workspace_id", workspaceId)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
-  return (data ?? []).filter((client) => client.status !== "archived" || client.id === includeId);
+  const rows = (data ?? []).filter((client) => client.status !== "archived" || client.id === includeId);
+
+  return ensureIncludedOption(rows, includeId, async (id) => {
+    const { data: row } = await supabase
+      .from("clients")
+      .select("id, name, status")
+      .eq("workspace_id", workspaceId)
+      .eq("id", id)
+      .maybeSingle();
+
+    return row;
+  });
 }
 
 export async function getClientDetail(

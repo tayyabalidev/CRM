@@ -1,5 +1,6 @@
 import { FILE_PAGE_SIZE, type FileListParams } from "@/lib/files/params";
 import { createClient } from "@/lib/supabase/server";
+import { OPTION_LIST_LIMIT } from "@/lib/utils/options";
 import { sanitizeSearch } from "@/lib/utils/text";
 
 export type FileListItem = {
@@ -110,7 +111,8 @@ export async function listFileTaskOptions(workspaceId: string) {
     .from("tasks")
     .select("id, title, project_id, client_id")
     .eq("workspace_id", workspaceId)
-    .order("title", { ascending: true });
+    .order("title", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
   return (data ?? []).map((task) => ({
     id: task.id,

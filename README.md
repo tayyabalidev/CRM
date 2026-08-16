@@ -27,6 +27,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 See `supabase/README.md` for details.
 
+## Deploy (Vercel)
+
+Set these in **Project → Settings → Environment Variables** for Production and Preview (available at **build** and runtime):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL` (your production URL, e.g. `https://your-app.vercel.app`)
+
+Then redeploy.
+
 ## Scripts
 
 ```bash

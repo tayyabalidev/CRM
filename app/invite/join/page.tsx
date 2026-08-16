@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: "Join workspace",
 };
 
+export const dynamic = "force-dynamic";
+
 const inviteErrors: Record<string, string> = {
   invalid: "This invite link is not valid.",
   used: "This invite has already been used.",

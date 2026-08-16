@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +26,7 @@ export type AuthState = {
   workspaces: AuthWorkspace[];
 };
 
-export async function getAuthState(): Promise<AuthState | null> {
+export const getAuthState = cache(async (): Promise<AuthState | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -74,7 +75,7 @@ export async function getAuthState(): Promise<AuthState | null> {
     profile,
     workspaces,
   };
-}
+});
 
 export async function requireAuthState() {
   const state = await getAuthState();

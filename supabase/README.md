@@ -13,7 +13,8 @@
 7. Paste and run `migrations/0005_settings.sql` (notification prefs and staff invite links).
 8. Paste and run `migrations/0006_notifications.sql` (in-app notification links and deadline dedupe).
 9. Paste and run `migrations/0007_security_hardening.sql` (storage tenant isolation, membership role guards, invite atomicity, related-row workspace checks).
-10. Copy the project URL and anon key into `.env.local`.
+10. Paste and run `migrations/0008_perf_indexes.sql` (list/report indexes for invoices, files, time entries, tasks, projects, notifications).
+11. Copy the project URL and anon key into `.env.local`.
 
 If `0001` failed with “type already exists”, run the updated `0001_schema.sql` again, then `0002_rls.sql`.
 

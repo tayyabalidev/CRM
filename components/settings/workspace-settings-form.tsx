@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -66,7 +67,14 @@ export function WorkspaceSettingsForm({
             <FieldError message={form.formState.errors.logoUrl?.message} />
           </div>
           {defaults.logoUrl ? (
-            <img src={defaults.logoUrl} alt="" className="size-12 rounded-lg border object-cover" />
+            <Image
+              src={defaults.logoUrl}
+              alt=""
+              width={48}
+              height={48}
+              unoptimized
+              className="size-12 rounded-lg border object-cover"
+            />
           ) : null}
           <FieldError message={formError ?? undefined} />
         </CardContent>

@@ -339,6 +339,28 @@ export async function syncDeadlineNotifications(
   }
 }
 
+export async function getUnreadNotificationCount(workspaceId: string, userId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("notify_in_app")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.notify_in_app === false) {
+    return 0;
+  }
+
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .eq("read", false);
+
+  return count ?? 0;
+}
+
 export async function getNotificationsForUser(
   workspaceId: string,
   userId: string,

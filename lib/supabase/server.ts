@@ -5,8 +5,10 @@ import { requirePublicEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 export async function createClient() {
-  const env = requirePublicEnv();
+  // Opt into dynamic rendering before env validation so missing build-time
+  // secrets do not get misclassified as a static-export failure.
   const cookieStore = await cookies();
+  const env = requirePublicEnv();
 
   return createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {

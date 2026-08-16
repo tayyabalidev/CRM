@@ -100,12 +100,14 @@ export async function getReportsData(
     supabase
       .from("invoices")
       .select("total, amount_paid, status, due_date")
-      .eq("workspace_id", workspaceId),
+      .eq("workspace_id", workspaceId)
+      .neq("status", "cancelled"),
     supabase
       .from("projects")
       .select("id, name, budget, clients ( name )")
       .eq("workspace_id", workspaceId)
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true })
+      .limit(200),
     supabase
       .from("time_entries")
       .select("project_id, duration_seconds, started_at, ended_at, billable, hourly_rate")

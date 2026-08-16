@@ -12,7 +12,6 @@ import { noteSchema } from "@/lib/validations/note";
 import type { NoteVisibility } from "@/types/index";
 
 function revalidateNotes(input?: { clientId?: string | null; projectId?: string | null }) {
-  revalidatePath("/");
   revalidatePath("/notes");
   revalidatePath("/clients");
   revalidatePath("/projects");

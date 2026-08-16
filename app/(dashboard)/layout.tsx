@@ -6,9 +6,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ACTIVE_WORKSPACE_COOKIE, pickActiveWorkspace } from "@/lib/auth/active-workspace";
 import { AUTH_PATHS } from "@/lib/auth/paths";
 import { requireAuthState } from "@/lib/auth/session";
-import { getNotificationsForUser } from "@/lib/services/notifications";
+import { getUnreadNotificationCount } from "@/lib/services/notifications";
 import { getRunningTimer } from "@/lib/services/time";
 import { isStaffRole } from "@/types/index";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const state = await requireAuthState();
@@ -27,8 +29,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   const canTrackTime = isStaffRole(workspace.role);
-  const runningTimer = canTrackTime ? await getRunningTimer(workspace.id, state.user.id) : null;
-  const notifications = await getNotificationsForUser(workspace.id, state.user.id);
+  const [runningTimer, unreadNotifications] = await Promise.all([
+    canTrackTime ? getRunningTimer(workspace.id, state.user.id) : Promise.resolve(null),
+    getUnreadNotificationCount(workspace.id, state.user.id),
+  ]);
 
   return (
     <AppShell
@@ -48,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       canTrackTime={canTrackTime}
       runningTimer={runningTimer}
       role={workspace.role}
-      unreadNotifications={notifications.unreadCount}
+      unreadNotifications={unreadNotifications}
       timeZone={workspace.timezone}
     >
       {children}

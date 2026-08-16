@@ -6,6 +6,7 @@ import { formatDuration } from "@/lib/utils/duration";
 import { toNumber } from "@/lib/utils/money";
 import { projectProgress } from "@/lib/utils/progress";
 import { sanitizeSearch } from "@/lib/utils/text";
+import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
 import type { InvoiceStatus, NoteVisibility, Priority, ProjectStatus, TaskStatus, WorkspaceRole } from "@/types/index";
 import type { Tables } from "@/types/database";
 
@@ -443,10 +444,22 @@ export async function listProjectOptions(workspaceId: string, includeId?: string
     .from("projects")
     .select("id, name, status, client_id")
     .eq("workspace_id", workspaceId)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
-  return (data ?? []).filter(
+  const rows = (data ?? []).filter(
     (project) =>
       (project.status !== "completed" && project.status !== "cancelled") || project.id === includeId,
   );
+
+  return ensureIncludedOption(rows, includeId, async (id) => {
+    const { data: row } = await supabase
+      .from("projects")
+      .select("id, name, status, client_id")
+      .eq("workspace_id", workspaceId)
+      .eq("id", id)
+      .maybeSingle();
+
+    return row;
+  });
 }

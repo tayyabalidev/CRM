@@ -1,8 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
+
 import { requireWorkspace } from "@/lib/auth/workspace";
 import {
   getNotificationsForUser,
+  getUnreadNotificationCount,
   markAllNotificationsRead,
   markNotificationRead,
   syncDeadlineNotifications,
@@ -12,6 +15,9 @@ import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
 import { isStaffRole } from "@/types/index";
 
+const DEADLINE_SYNC_COOKIE = "workflow_deadline_sync";
+const DEADLINE_SYNC_TTL_MS = 15 * 60 * 1000;
+
 export type NotificationsPayload = {
   items: NotificationItem[];
   unreadCount: number;
@@ -20,10 +26,23 @@ export type NotificationsPayload = {
 
 export async function getNotificationsAction(): Promise<NotificationsPayload> {
   const { workspace, user } = await requireWorkspace();
-  const supabase = await createClient();
 
   if (isStaffRole(workspace.role)) {
-    await syncDeadlineNotifications(supabase, workspace.id, workspace.timezone);
+    const cookieStore = await cookies();
+    const lastRaw = cookieStore.get(DEADLINE_SYNC_COOKIE)?.value;
+    const lastMs = lastRaw ? Number.parseInt(lastRaw, 10) : 0;
+    const now = Date.now();
+
+    if (!Number.isFinite(lastMs) || now - lastMs >= DEADLINE_SYNC_TTL_MS) {
+      const supabase = await createClient();
+      await syncDeadlineNotifications(supabase, workspace.id, workspace.timezone);
+      cookieStore.set(DEADLINE_SYNC_COOKIE, String(now), {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24,
+      });
+    }
   }
 
   return getNotificationsForUser(workspace.id, user.id);
@@ -31,8 +50,7 @@ export async function getNotificationsAction(): Promise<NotificationsPayload> {
 
 export async function getUnreadNotificationCountAction(): Promise<number> {
   const { workspace, user } = await requireWorkspace();
-  const result = await getNotificationsForUser(workspace.id, user.id);
-  return result.unreadCount;
+  return getUnreadNotificationCount(workspace.id, user.id);
 }
 
 export async function markNotificationReadAction(notificationId: string) {

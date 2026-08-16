@@ -113,7 +113,12 @@ function relatedClient(
 
 export async function nextWorkspaceInvoiceNumber(workspaceId: string) {
   const supabase = await createClient();
-  const { data } = await supabase.from("invoices").select("invoice_number").eq("workspace_id", workspaceId);
+  const { data } = await supabase
+    .from("invoices")
+    .select("invoice_number")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(200);
   return nextInvoiceNumber((data ?? []).map((row) => row.invoice_number));
 }
 

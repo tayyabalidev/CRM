@@ -4,6 +4,7 @@ import { PAYMENT_PAGE_SIZE, type PaymentListParams } from "@/lib/payments/params
 import { createClient } from "@/lib/supabase/server";
 import { startOfWeekKey, zonedDateKey } from "@/lib/utils/dates";
 import { toNumber } from "@/lib/utils/money";
+import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
 import { sanitizeSearch } from "@/lib/utils/text";
 import type { Database } from "@/types/database";
 import type { InvoiceStatus, PaymentMethod } from "@/types/index";
@@ -91,7 +92,8 @@ export async function listPaymentClients(workspaceId: string) {
     .from("clients")
     .select("id, name")
     .eq("workspace_id", workspaceId)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
   return data ?? [];
 }
@@ -102,7 +104,8 @@ export async function listPaymentProjects(workspaceId: string) {
     .from("projects")
     .select("id, name, client_id")
     .eq("workspace_id", workspaceId)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
   return data ?? [];
 }
@@ -113,9 +116,10 @@ export async function listInvoiceOptions(workspaceId: string, includeId?: string
     .from("invoices")
     .select("id, invoice_number, client_id, project_id, status, total, amount_paid")
     .eq("workspace_id", workspaceId)
-    .order("issue_date", { ascending: false });
+    .order("issue_date", { ascending: false })
+    .limit(OPTION_LIST_LIMIT);
 
-  return (data ?? [])
+  const mapped = (data ?? [])
     .filter((invoice) => invoice.status !== "cancelled" || invoice.id === includeId)
     .map((invoice) => ({
       id: invoice.id,
@@ -126,6 +130,29 @@ export async function listInvoiceOptions(workspaceId: string, includeId?: string
       total: toNumber(invoice.total),
       amountPaid: toNumber(invoice.amount_paid),
     }));
+
+  return ensureIncludedOption(mapped, includeId, async (id) => {
+    const { data: row } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, client_id, project_id, status, total, amount_paid")
+      .eq("workspace_id", workspaceId)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      invoiceNumber: row.invoice_number,
+      clientId: row.client_id,
+      projectId: row.project_id,
+      status: row.status,
+      total: toNumber(row.total),
+      amountPaid: toNumber(row.amount_paid),
+    };
+  });
 }
 
 export async function syncInvoiceFromPayments(
@@ -226,12 +253,39 @@ export async function getPaymentPageData(
 
   const [listResult, allPaymentsResult, projectsResult] = await Promise.all([
     listQuery,
-    supabase.from("payments").select("amount, project_id, client_id").eq("workspace_id", workspaceId),
-    supabase
-      .from("projects")
-      .select("id, name, budget, currency, client_id, clients ( name )")
-      .eq("workspace_id", workspaceId)
-      .order("name", { ascending: true }),
+    (() => {
+      let aggregateQuery = supabase
+        .from("payments")
+        .select("amount, project_id, client_id")
+        .eq("workspace_id", workspaceId);
+
+      if (params.clientId) {
+        aggregateQuery = aggregateQuery.eq("client_id", params.clientId);
+      }
+
+      if (params.projectId) {
+        aggregateQuery = aggregateQuery.eq("project_id", params.projectId);
+      }
+
+      return aggregateQuery;
+    })(),
+    (() => {
+      let projectsQuery = supabase
+        .from("projects")
+        .select("id, name, budget, currency, client_id, clients ( name )")
+        .eq("workspace_id", workspaceId)
+        .order("name", { ascending: true });
+
+      if (params.clientId) {
+        projectsQuery = projectsQuery.eq("client_id", params.clientId);
+      }
+
+      if (params.projectId) {
+        projectsQuery = projectsQuery.eq("id", params.projectId);
+      }
+
+      return projectsQuery;
+    })(),
   ]);
 
   if (listResult.error) {

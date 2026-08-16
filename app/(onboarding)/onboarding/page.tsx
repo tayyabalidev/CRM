@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: "Set up your workspace",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function OnboardingPage() {
   const state = await requireAuthState();
 

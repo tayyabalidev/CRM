@@ -109,7 +109,8 @@ export async function getDashboardData(
   const bucketByMonth = range === "3m" || range === "6m" || range === "1y";
 
   const [
-    paymentsResult,
+    paymentsLifetimeResult,
+    paymentsRangeResult,
     invoicesResult,
     activeProjectsCount,
     pendingTasksCount,
@@ -123,14 +124,18 @@ export async function getDashboardData(
     recentCompletedTasks,
     activityLogs,
   ] = await Promise.all([
+    supabase.from("payments").select("amount").eq("workspace_id", workspaceId),
     supabase
       .from("payments")
       .select("amount, payment_date")
-      .eq("workspace_id", workspaceId),
+      .eq("workspace_id", workspaceId)
+      .gte("payment_date", rangeStartKey)
+      .lte("payment_date", todayKey),
     supabase
       .from("invoices")
       .select("total, amount_paid, status, due_date")
-      .eq("workspace_id", workspaceId),
+      .eq("workspace_id", workspaceId)
+      .neq("status", "cancelled"),
     supabase
       .from("projects")
       .select("id", { count: "exact", head: true })
@@ -204,10 +209,11 @@ export async function getDashboardData(
       .limit(8),
   ]);
 
-  const payments = paymentsResult.data ?? [];
+  const paymentsLifetime = paymentsLifetimeResult.data ?? [];
+  const payments = paymentsRangeResult.data ?? [];
   const invoices = (invoicesResult.data ?? []) as InvoiceRow[];
 
-  const totalRevenue = payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0);
+  const totalRevenue = paymentsLifetime.reduce((sum, payment) => sum + toNumber(payment.amount), 0);
 
   let pending = 0;
   let overdue = 0;
@@ -226,16 +232,12 @@ export async function getDashboardData(
     }
   }
 
-  const paid = payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0);
+  const paid = totalRevenue;
 
   const outstanding = pending + overdue;
   const buckets = new Map<string, number>();
 
   for (const payment of payments) {
-    if (payment.payment_date < rangeStartKey || payment.payment_date > todayKey) {
-      continue;
-    }
-
     const key = bucketByMonth ? payment.payment_date.slice(0, 7) : payment.payment_date;
     buckets.set(key, (buckets.get(key) ?? 0) + toNumber(payment.amount));
   }

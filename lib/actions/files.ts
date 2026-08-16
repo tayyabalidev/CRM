@@ -17,7 +17,6 @@ function revalidateFiles(input?: {
   taskId?: string | null;
   invoiceId?: string | null;
 }) {
-  revalidatePath("/");
   revalidatePath("/files");
   revalidatePath("/clients");
   revalidatePath("/projects");

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -24,13 +25,17 @@ import { isStaffRole } from "@/types/index";
 
 function WorkspaceMark({ name, logoUrl, size }: { name: string; logoUrl: string | null; size: "sm" | "md" }) {
   const initial = name.trim().charAt(0).toUpperCase() || "W";
+  const px = size === "md" ? 32 : 24;
   const box = size === "md" ? "size-8 text-xs" : "size-6 text-[11px]";
 
   if (logoUrl) {
     return (
-      <img
+      <Image
         src={logoUrl}
         alt=""
+        width={px}
+        height={px}
+        unoptimized
         className={`${box} rounded-lg border border-sidebar-border object-cover`}
       />
     );

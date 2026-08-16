@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { entrySeconds } from "@/lib/services/time";
 import { addCalendarDays, zonedDateKey } from "@/lib/utils/dates";
 import { sanitizeSearch } from "@/lib/utils/text";
+import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
 import type { Priority, TaskStatus } from "@/types/index";
 import type { Tables } from "@/types/database";
 
@@ -295,7 +296,20 @@ export async function listTaskOptions(workspaceId: string, projectId: string, in
     .select("id, title, status, project_id")
     .eq("workspace_id", workspaceId)
     .eq("project_id", projectId)
-    .order("title", { ascending: true });
+    .order("title", { ascending: true })
+    .limit(OPTION_LIST_LIMIT);
 
-  return (data ?? []).filter((task) => task.status !== "completed" || task.id === includeId);
+  const rows = (data ?? []).filter((task) => task.status !== "completed" || task.id === includeId);
+
+  return ensureIncludedOption(rows, includeId, async (id) => {
+    const { data: row } = await supabase
+      .from("tasks")
+      .select("id, title, status, project_id")
+      .eq("workspace_id", workspaceId)
+      .eq("project_id", projectId)
+      .eq("id", id)
+      .maybeSingle();
+
+    return row;
+  });
 }
