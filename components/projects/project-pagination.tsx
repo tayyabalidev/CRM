@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { buttonVariants } from "@/components/ui/button";
+import { projectListHref, type ProjectListParams } from "@/lib/projects/params";
+import { cn } from "@/lib/utils";
+
+export function ProjectPagination({
+  params,
+  page,
+  pageCount,
+  total,
+}: {
+  params: ProjectListParams;
+  page: number;
+  pageCount: number;
+  total: number;
+}) {
+  if (total === 0 || params.view === "board") {
+    return null;
+  }
+
+  const previousHref = page > 1 ? projectListHref(params, { page: page - 1 }) : null;
+  const nextHref = page < pageCount ? projectListHref(params, { page: page + 1 }) : null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-xs text-muted-foreground">
+        Page {page} of {pageCount} · {total} {total === 1 ? "project" : "projects"}
+      </p>
+      <div className="flex gap-2">
+        {previousHref ? (
+          <Link href={previousHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            <ChevronLeft />
+            Previous
+          </Link>
+        ) : (
+          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>
+            <ChevronLeft />
+            Previous
+          </span>
+        )}
+        {nextHref ? (
+          <Link href={nextHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            Next
+            <ChevronRight />
+          </Link>
+        ) : (
+          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>
+            Next
+            <ChevronRight />
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
