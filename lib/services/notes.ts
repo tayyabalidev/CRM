@@ -1,5 +1,6 @@
 import { NOTE_PAGE_SIZE, type NoteListParams } from "@/lib/notes/params";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { sanitizeSearch } from "@/lib/utils/text";
 import type { NoteVisibility } from "@/types/index";
 
@@ -68,7 +69,7 @@ export async function getNotePageData(workspaceId: string, params: NoteListParam
   const { data, error, count } = await query;
 
   if (error) {
-    throw new Error("Could not load notes.");
+    throwUserError("notes.list", error, "Could not load notes.");
   }
 
   const total = count ?? 0;

@@ -1,6 +1,7 @@
 import { TASK_BOARD_LIMIT, TASK_PAGE_SIZE, type TaskListParams } from "@/lib/tasks/params";
 import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { entrySeconds } from "@/lib/services/time";
 import { addCalendarDays, zonedDateKey } from "@/lib/utils/dates";
 import { sanitizeSearch } from "@/lib/utils/text";
@@ -169,7 +170,7 @@ export async function listTasks(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Could not load tasks.");
+    throwUserError("tasks.list", error, "Could not load tasks.");
   }
 
   const total = count ?? 0;

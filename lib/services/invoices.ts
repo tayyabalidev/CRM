@@ -2,6 +2,7 @@ import { INVOICE_PAGE_SIZE, type InvoiceListParams } from "@/lib/invoices/params
 import { nextInvoiceNumber } from "@/lib/invoices/number";
 import { displayInvoiceStatus, remainingBalance } from "@/lib/invoices/totals";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { zonedDateKey } from "@/lib/utils/dates";
 import { toNumber } from "@/lib/utils/money";
 import { sanitizeSearch } from "@/lib/utils/text";
@@ -176,7 +177,7 @@ export async function getInvoicePageData(
   ]);
 
   if (listResult.error) {
-    throw new Error("Could not load invoices.");
+    throwUserError("invoices.list", listResult.error, "Could not load invoices.");
   }
 
   let outstanding = 0;

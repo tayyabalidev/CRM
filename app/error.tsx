@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
+import { appConfig } from "@/lib/config";
 
-export default function DashboardError({
+export default function RootError({
   error,
   reset,
 }: {
@@ -14,7 +15,7 @@ export default function DashboardError({
 }) {
   useEffect(() => {
     console.error("[workflow]", {
-      context: "dashboard/error",
+      context: "app/error",
       name: error.name,
       digest: error.digest,
       message: error.message.slice(0, 300),
@@ -22,10 +23,11 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-3 p-6 text-center">
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{appConfig.name}</p>
       <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        This page hit an unexpected error. Try again, or go back to the dashboard.
+        We hit an unexpected error. Try again, or go back to the dashboard.
       </p>
       {error.digest ? (
         <p className="text-xs text-muted-foreground">Reference: {error.digest}</p>

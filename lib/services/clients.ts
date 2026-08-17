@@ -1,6 +1,7 @@
 import { CLIENT_PAGE_SIZE, type ClientListParams } from "@/lib/clients/params";
 import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { sanitizeSearch } from "@/lib/utils/text";
 import { toNumber } from "@/lib/utils/money";
 import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
@@ -148,7 +149,7 @@ export async function listClients(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Could not load clients.");
+    throwUserError("clients.list", error, "Could not load clients.");
   }
 
   const total = count ?? 0;

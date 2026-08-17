@@ -27,7 +27,7 @@ export async function requireStaff(): Promise<WorkspaceContext> {
   const ctx = await requireWorkspace();
 
   if (!isStaffRole(ctx.workspace.role)) {
-    redirect("/");
+    redirect(AUTH_PATHS.unauthorized);
   }
 
   return ctx;

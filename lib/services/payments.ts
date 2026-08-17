@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { PAYMENT_PAGE_SIZE, type PaymentListParams } from "@/lib/payments/params";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { startOfWeekKey, zonedDateKey } from "@/lib/utils/dates";
 import { toNumber } from "@/lib/utils/money";
 import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
@@ -289,7 +290,7 @@ export async function getPaymentPageData(
   ]);
 
   if (listResult.error) {
-    throw new Error("Could not load payments.");
+    throwUserError("payments.list", listResult.error, "Could not load payments.");
   }
 
   const paidByProject = new Map<string, number>();

@@ -1,5 +1,6 @@
 import { FILE_PAGE_SIZE, type FileListParams } from "@/lib/files/params";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { OPTION_LIST_LIMIT } from "@/lib/utils/options";
 import { sanitizeSearch } from "@/lib/utils/text";
 
@@ -76,7 +77,7 @@ export async function getFilePageData(workspaceId: string, params: FileListParam
   const { data, error, count } = await query;
 
   if (error) {
-    throw new Error("Could not load files.");
+    throwUserError("files.list", error, "Could not load files.");
   }
 
   const total = count ?? 0;

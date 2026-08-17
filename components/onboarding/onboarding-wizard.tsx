@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { completeOnboardingAction } from "@/lib/actions/onboarding";
 import { currencies } from "@/lib/constants/currencies";
+import { listTimezones } from "@/lib/constants/timezones";
 import { appConfig } from "@/lib/config";
 import type { OnboardingInput } from "@/lib/validations/onboarding";
 
@@ -23,14 +24,6 @@ const STEPS = [
   { id: "finish", title: "Finish" },
 ] as const;
 
-function getTimezones() {
-  try {
-    return Intl.supportedValuesOf("timeZone");
-  } catch {
-    return ["UTC"];
-  }
-}
-
 export function OnboardingWizard({
   defaultName,
   defaultTimezone,
@@ -38,7 +31,7 @@ export function OnboardingWizard({
   defaultName: string;
   defaultTimezone: string;
 }) {
-  const timezones = useMemo(() => getTimezones(), []);
+  const timezones = useMemo(() => listTimezones(), []);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

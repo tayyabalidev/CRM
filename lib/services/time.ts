@@ -1,5 +1,6 @@
 import { TIME_PAGE_SIZE, type TimeListParams } from "@/lib/time/params";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { startOfWeekKey, zonedDateKey } from "@/lib/utils/dates";
 import { sanitizeSearch } from "@/lib/utils/text";
 import { toNumber } from "@/lib/utils/money";
@@ -184,7 +185,7 @@ export async function getTimePageData(
   ]);
 
   if (listResult.error) {
-    throw new Error("Could not load time entries.");
+    throwUserError("time.list", listResult.error, "Could not load time entries.");
   }
 
   const projectTotals = new Map<string, ProjectTimeTotal>();

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import type { InvoiceStatus } from "@/types/index";
 import {
   type DashboardRange,
@@ -115,6 +116,14 @@ export async function getReportsData(
       .gte("started_at", rangeStartIso)
       .not("ended_at", "is", null),
   ]);
+
+  if (paymentsResult.error || invoicesResult.error || projectsResult.error || timeResult.error) {
+    throwUserError(
+      "reports.load",
+      paymentsResult.error ?? invoicesResult.error ?? projectsResult.error ?? timeResult.error,
+      "Could not load reports.",
+    );
+  }
 
   const payments = paymentsResult.data ?? [];
   const invoices = (invoicesResult.data ?? []) as InvoiceRow[];

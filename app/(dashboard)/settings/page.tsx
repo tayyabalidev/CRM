@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CurrencySettingsForm } from "@/components/settings/currency-settings-form";
+import { DemoDataCard } from "@/components/settings/demo-data-card";
 import { NotificationSettingsForm } from "@/components/settings/notification-settings-form";
 import { ProfileSettingsForm } from "@/components/settings/profile-settings-form";
 import { SecuritySettingsForm } from "@/components/settings/security-settings-form";
@@ -8,7 +9,10 @@ import { TeamSettingsCard } from "@/components/settings/team-settings-card";
 import { TimezoneSettingsForm } from "@/components/settings/timezone-settings-form";
 import { WorkspaceSettingsForm } from "@/components/settings/workspace-settings-form";
 import { requireStaff } from "@/lib/auth/workspace";
+import { isDemoDataEnabled } from "@/lib/demo/constants";
+import { workspaceHasDemoData } from "@/lib/services/demo";
 import { getSettingsPageData } from "@/lib/services/settings";
+import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/utils/site-url";
 import { canManageWorkspace } from "@/types/index";
 
@@ -19,7 +23,14 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const { workspace, user, profile } = await requireStaff();
   const canManage = canManageWorkspace(workspace.role);
-  const [data, siteUrl] = await Promise.all([getSettingsPageData(workspace.id, user.id), getSiteUrl()]);
+  const demoEnabled = isDemoDataEnabled() && canManage;
+  const [data, siteUrl, hasDemoData] = await Promise.all([
+    getSettingsPageData(workspace.id, user.id),
+    getSiteUrl(),
+    demoEnabled
+      ? createClient().then((supabase) => workspaceHasDemoData(supabase, workspace.id))
+      : Promise.resolve(false),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -62,6 +73,7 @@ export default async function SettingsPage() {
           }}
         />
         <SecuritySettingsForm email={user.email} />
+        {demoEnabled ? <DemoDataCard hasDemoData={hasDemoData} /> : null}
       </div>
     </div>
   );

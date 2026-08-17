@@ -1,6 +1,7 @@
 import { PROJECT_BOARD_LIMIT, PROJECT_PAGE_SIZE, type ProjectListParams } from "@/lib/projects/params";
 import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { entrySeconds } from "@/lib/services/time";
 import { formatDuration } from "@/lib/utils/duration";
 import { toNumber } from "@/lib/utils/money";
@@ -186,7 +187,7 @@ export async function listProjects(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Could not load projects.");
+    throwUserError("projects.list", error, "Could not load projects.");
   }
 
   const rows = data ?? [];

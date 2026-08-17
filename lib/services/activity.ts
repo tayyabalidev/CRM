@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { ACTIVITY_PAGE_SIZE, activityHref, type ActivityListParams } from "@/lib/activity/params";
 import { createClient } from "@/lib/supabase/server";
+import { throwUserError } from "@/lib/logging/safe-error";
 import { sanitizeSearch } from "@/lib/utils/text";
 import type { Database, Json } from "@/types/database";
 
@@ -146,7 +147,7 @@ export async function getActivityPageData(
   const { data, error, count } = await query;
 
   if (error) {
-    throw new Error("Could not load activity.");
+    throwUserError("activity.list", error, "Could not load activity.");
   }
 
   const total = count ?? 0;

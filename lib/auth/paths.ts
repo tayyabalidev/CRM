@@ -5,6 +5,7 @@ export const AUTH_PATHS = {
   resetPassword: "/reset-password",
   onboarding: "/onboarding",
   callback: "/auth/callback",
+  unauthorized: "/unauthorized",
 } as const;
 
 export function isPublicAuthPath(pathname: string) {
