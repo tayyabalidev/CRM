@@ -112,6 +112,10 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Optional — Resend API key for email invites (https://resend.com, free: 100/day)
 # RESEND_API_KEY=re_...
+
+# Optional — Sentry error tracking
+# NEXT_PUBLIC_SENTRY_DSN=https://<public-key>@o0.ingest.sentry.io/0
+# SENTRY_DSN=https://<public-key>@o0.ingest.sentry.io/0
 ```
 
 Never commit `.env.local` or real keys.
@@ -126,6 +130,8 @@ Add for **Production** and **Preview**, available at **Build** and **Runtime**:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key from Supabase |
 | `NEXT_PUBLIC_SITE_URL` | `https://your-app.vercel.app` |
 | `RESEND_API_KEY` *(optional)* | Resend API key for email invites |
+| `NEXT_PUBLIC_SENTRY_DSN` *(optional)* | Public Sentry DSN for browser errors |
+| `SENTRY_DSN` *(optional)* | Sentry DSN for server/runtime errors |
 
 `NEXT_PUBLIC_*` values are inlined at **build** time — set them before the first deploy, then redeploy if you change them.
 

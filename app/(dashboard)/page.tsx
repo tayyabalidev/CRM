@@ -30,7 +30,7 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-semibold tracking-tight">Welcome, {firstName}</h1>
           <p className="text-sm text-muted-foreground">
             {portal
-              ? `Your work with ${workspace.name}. You only see this client’s projects, invoices, and notes.`
+              ? `Your client portal for ${workspace.name}. Check updates, deadlines, invoices, and shared files in one place.`
               : `${workspace.name} overview. Figures update from your workspace data.`}
           </p>
         </div>

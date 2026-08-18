@@ -45,6 +45,7 @@ export function FileUploadSheet({
   tasks = [],
   invoices = [],
   defaultClientId,
+  lockedClientId,
   defaultProjectId,
   defaultTaskId,
   defaultInvoiceId,
@@ -59,6 +60,7 @@ export function FileUploadSheet({
   tasks?: FileUploadTask[];
   invoices?: FileUploadInvoice[];
   defaultClientId?: string;
+  lockedClientId?: string;
   defaultProjectId?: string;
   defaultTaskId?: string;
   defaultInvoiceId?: string;
@@ -72,26 +74,27 @@ export function FileUploadSheet({
   const [pending, startTransition] = useTransition();
   const [file, setFile] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState(0);
-  const [clientId, setClientId] = useState(defaultClientId ?? "");
+  const [clientId, setClientId] = useState(lockedClientId ?? defaultClientId ?? "");
   const [projectId, setProjectId] = useState(defaultProjectId ?? "");
   const [taskId, setTaskId] = useState(defaultTaskId ?? "");
   const [invoiceId, setInvoiceId] = useState(defaultInvoiceId ?? "");
   const sheetOpen = open ?? uncontrolledOpen;
   const setSheetOpen = onOpenChange ?? setUncontrolledOpen;
-  const visibleProjects = projects.filter((project) => !clientId || project.clientId === clientId);
+  const effectiveClientId = lockedClientId ?? clientId;
+  const visibleProjects = projects.filter((project) => !effectiveClientId || project.clientId === effectiveClientId);
   const visibleTasks = tasks.filter((task) => {
     if (projectId && task.projectId !== projectId) {
       return false;
     }
 
-    if (clientId && task.clientId && task.clientId !== clientId) {
+    if (effectiveClientId && task.clientId && task.clientId !== effectiveClientId) {
       return false;
     }
 
     return true;
   });
   const visibleInvoices = invoices.filter((invoice) => {
-    if (clientId && invoice.clientId !== clientId) {
+    if (effectiveClientId && invoice.clientId !== effectiveClientId) {
       return false;
     }
 
@@ -105,7 +108,7 @@ export function FileUploadSheet({
   function resetFields() {
     setFile(null);
     setFileKey((key) => key + 1);
-    setClientId(defaultClientId ?? "");
+    setClientId(lockedClientId ?? defaultClientId ?? "");
     setProjectId(defaultProjectId ?? "");
     setTaskId(defaultTaskId ?? "");
     setInvoiceId(defaultInvoiceId ?? "");
@@ -174,7 +177,7 @@ export function FileUploadSheet({
                 filePath,
                 fileSize: file.size,
                 mimeType: mimeType || "",
-                clientId: lockTargets ? (defaultClientId ?? "") : clientId,
+                clientId: lockedClientId ?? (lockTargets ? (defaultClientId ?? "") : clientId),
                 projectId: lockTargets ? (defaultProjectId ?? "") : projectId,
                 taskId: lockTargets ? (defaultTaskId ?? "") : taskId,
                 invoiceId: lockTargets ? (defaultInvoiceId ?? "") : invoiceId,
@@ -204,26 +207,28 @@ export function FileUploadSheet({
             </div>
             {lockTargets ? null : (
               <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="file-client">Client</Label>
-                  <Select
-                    id="file-client"
-                    value={clientId}
-                    onChange={(event) => {
-                      setClientId(event.target.value);
-                      setProjectId("");
-                      setTaskId("");
-                      setInvoiceId("");
-                    }}
-                  >
-                    <option value="">No client</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+                {lockedClientId ? null : (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="file-client">Client</Label>
+                    <Select
+                      id="file-client"
+                      value={clientId}
+                      onChange={(event) => {
+                        setClientId(event.target.value);
+                        setProjectId("");
+                        setTaskId("");
+                        setInvoiceId("");
+                      }}
+                    >
+                      <option value="">No client</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label htmlFor="file-project">Project</Label>
                   <Select

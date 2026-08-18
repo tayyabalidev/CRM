@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { toUserFacingAuthError } from "@/lib/auth/errors";
 import { AUTH_PATHS, isInviteJoinPath, safeNextPath } from "@/lib/auth/paths";
 import { getAuthState } from "@/lib/auth/session";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/utils/site-url";
 import {
@@ -20,6 +21,14 @@ export async function loginAction(input: unknown, nextPath?: string) {
 
   if (!parsed.success) {
     return { error: "Enter a valid email and password." };
+  }
+
+  const loginLimit = checkRateLimit(`auth:login:${parsed.data.email.toLowerCase()}`, {
+    max: 8,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!loginLimit.ok) {
+    return { error: `Too many login attempts. Try again in ${loginLimit.retryAfterSeconds}s.` };
   }
 
   const supabase = await createClient();
@@ -53,6 +62,14 @@ export async function signupAction(input: unknown, nextPath?: string) {
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
+  }
+
+  const signupLimit = checkRateLimit(`auth:signup:${parsed.data.email.toLowerCase()}`, {
+    max: 5,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!signupLimit.ok) {
+    return { error: `Too many signup attempts. Try again in ${signupLimit.retryAfterSeconds}s.` };
   }
 
   const next = safeNextPath(nextPath);
@@ -94,6 +111,14 @@ export async function forgotPasswordAction(input: unknown) {
 
   if (!parsed.success) {
     return { error: "Enter a valid email." };
+  }
+
+  const forgotLimit = checkRateLimit(`auth:forgot:${parsed.data.email.toLowerCase()}`, {
+    max: 5,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!forgotLimit.ok) {
+    return { error: `Too many reset requests. Try again in ${forgotLimit.retryAfterSeconds}s.` };
   }
 
   const supabase = await createClient();

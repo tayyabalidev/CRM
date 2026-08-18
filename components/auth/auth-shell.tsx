@@ -33,7 +33,16 @@ export function AuthShell({
           {children}
         </div>
         {footer ? <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div> : null}
-        <p className="mt-8 text-center text-xs text-muted-foreground">{appConfig.name}</p>
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          {appConfig.name} ·{" "}
+          <Link href="/privacy" className="hover:underline">
+            Privacy
+          </Link>{" "}
+          ·{" "}
+          <Link href="/terms" className="hover:underline">
+            Terms
+          </Link>
+        </p>
       </div>
     </div>
   );

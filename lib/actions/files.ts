@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspace } from "@/lib/auth/workspace";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { logActivity } from "@/lib/services/activity";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
@@ -133,9 +134,18 @@ export async function createFileRecordAction(input: unknown) {
   }
 
   const { workspace, user } = await requireWorkspace();
+  const isStaff = isStaffRole(workspace.role);
+  const scopedClientId = workspace.clientId;
 
-  if (!isStaffRole(workspace.role)) {
+  if (!isStaff && !scopedClientId) {
     return { error: "You do not have permission to upload files." };
+  }
+  const uploadLimit = checkRateLimit(`files:upload:${user.id}`, {
+    max: 30,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!uploadLimit.ok) {
+    return { error: `Upload limit reached. Try again in ${uploadLimit.retryAfterSeconds}s.` };
   }
 
   const expectedPrefix = `${workspace.id}/${parsed.data.id}/`;
@@ -153,8 +163,13 @@ export async function createFileRecordAction(input: unknown) {
     return { error: validationError };
   }
 
+  const requestedClientId = emptyToNull(parsed.data.clientId);
+  if (!isStaff && requestedClientId && requestedClientId !== scopedClientId) {
+    return { error: "You can only upload files for your client account." };
+  }
+
   const targets = await resolveFileTargets(workspace.id, {
-    clientId: emptyToNull(parsed.data.clientId),
+    clientId: isStaff ? requestedClientId : scopedClientId,
     projectId: emptyToNull(parsed.data.projectId),
     taskId: emptyToNull(parsed.data.taskId),
     invoiceId: emptyToNull(parsed.data.invoiceId),

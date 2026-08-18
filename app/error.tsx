@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/lib/config";
+import { captureException } from "@/lib/logging/sentry";
 
 export default function RootError({
   error,
@@ -20,6 +21,7 @@ export default function RootError({
       digest: error.digest,
       message: error.message.slice(0, 300),
     });
+    captureException(error, { context: "app/error", digest: error.digest });
   }, [error]);
 
   return (

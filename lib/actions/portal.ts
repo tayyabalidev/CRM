@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireAuthState } from "@/lib/auth/session";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { sendPortalInviteEmail } from "@/lib/email/send-invite";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
 import { getSiteUrl } from "@/lib/utils/site-url";
@@ -43,6 +44,13 @@ export async function createPortalInviteAction(
 
   if (!isStaffRole(workspace.role)) {
     return { error: "You do not have permission to invite portal users." };
+  }
+  const inviteLimit = checkRateLimit(`portal:create:${user.id}`, {
+    max: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!inviteLimit.ok) {
+    return { error: `Too many invites created. Try again in ${inviteLimit.retryAfterSeconds}s.` };
   }
 
   const supabase = await createClient();
@@ -123,7 +131,6 @@ export async function previewPortalInviteAction(token: string): Promise<InvitePr
     return { error: "invalid" as const };
   }
 
-  await requireAuthState();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("preview_client_portal_invite", { p_token: token });
 
@@ -148,7 +155,14 @@ export async function acceptPortalInviteAction(token: string) {
     return { error: "This invite link is not valid." };
   }
 
-  await requireAuthState();
+  const authState = await requireAuthState();
+  const acceptLimit = checkRateLimit(`portal:accept:${authState.user.id}`, {
+    max: 30,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!acceptLimit.ok) {
+    return { error: `Too many attempts. Try again in ${acceptLimit.retryAfterSeconds}s.` };
+  }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("accept_client_portal_invite", { p_token: token });
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { canCreateNote, canEditNote } from "@/lib/notes/access";
 import { logActivity } from "@/lib/services/activity";
+import { notifyClientUpdate } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
 import { emptyToNull } from "@/lib/utils/text";
@@ -149,6 +150,16 @@ export async function createNoteAction(input: unknown) {
     action: "created",
     message: `added note “${parsed.data.title}”.`,
   });
+
+  if (parsed.data.visibility === "client" && targets.clientId && workspace.role !== "client") {
+    await notifyClientUpdate(supabase, {
+      workspaceId: workspace.id,
+      clientId: targets.clientId,
+      actorId: user.id,
+      noteId: data.id,
+      title: parsed.data.title,
+    });
+  }
 
   revalidateNotes(targets);
   return {};

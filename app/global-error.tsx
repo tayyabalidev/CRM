@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { appConfig } from "@/lib/config";
+import { captureException } from "@/lib/logging/sentry";
 
 export default function GlobalError({
   error,
@@ -18,6 +19,7 @@ export default function GlobalError({
       digest: error.digest,
       message: error.message.slice(0, 300),
     });
+    captureException(error, { context: "app/global-error", digest: error.digest });
   }, [error]);
 
   return (

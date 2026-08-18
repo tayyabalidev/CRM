@@ -93,3 +93,34 @@ export async function getNotePageData(workspaceId: string, params: NoteListParam
     pageCount: Math.max(1, Math.ceil(total / NOTE_PAGE_SIZE)),
   };
 }
+
+export async function listClientUpdates(workspaceId: string, limit = 30): Promise<NoteListItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notes")
+    .select(
+      "id, title, content, visibility, created_at, updated_at, created_by, client_id, project_id, clients ( name ), projects ( name )",
+    )
+    .eq("workspace_id", workspaceId)
+    .eq("visibility", "client")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throwUserError("notes.client_updates", error, "Could not load updates.");
+  }
+
+  return (data ?? []).map((note) => ({
+    id: note.id,
+    title: note.title,
+    content: note.content,
+    visibility: note.visibility,
+    createdAt: note.created_at,
+    updatedAt: note.updated_at,
+    createdBy: note.created_by,
+    clientId: note.client_id,
+    clientName: relatedName(note.clients),
+    projectId: note.project_id,
+    projectName: relatedName(note.projects),
+  }));
+}

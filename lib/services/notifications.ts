@@ -11,7 +11,8 @@ export type NotificationType =
   | "task_due_soon"
   | "invoice_overdue"
   | "payment_recorded"
-  | "project_deadline";
+  | "project_deadline"
+  | "client_update";
 
 export type NotificationItem = {
   id: string;
@@ -46,6 +47,25 @@ async function listStaffRecipients(
     .select("user_id, profiles ( notify_in_app )")
     .eq("workspace_id", workspaceId)
     .in("role", ["owner", "admin", "member"]);
+
+  return (data ?? [])
+    .filter((member) => member.user_id !== options?.excludeUserId)
+    .filter((member) => relatedNotifyFlag(member.profiles))
+    .map((member) => member.user_id);
+}
+
+async function listClientRecipients(
+  supabase: SupabaseClient<Database>,
+  workspaceId: string,
+  clientId: string,
+  options?: { excludeUserId?: string },
+) {
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("user_id, profiles ( notify_in_app )")
+    .eq("workspace_id", workspaceId)
+    .eq("role", "client")
+    .eq("client_id", clientId);
 
   return (data ?? [])
     .filter((member) => member.user_id !== options?.excludeUserId)
@@ -216,6 +236,36 @@ export async function notifyPaymentRecorded(
     link: "/payments",
     entityType: "payment",
     entityId: input.paymentId,
+  });
+}
+
+export async function notifyClientUpdate(
+  supabase: SupabaseClient<Database>,
+  input: {
+    workspaceId: string;
+    clientId: string;
+    actorId: string;
+    noteId: string;
+    title: string;
+  },
+) {
+  const recipients = await listClientRecipients(supabase, input.workspaceId, input.clientId, {
+    excludeUserId: input.actorId,
+  });
+
+  if (recipients.length === 0) {
+    return;
+  }
+
+  await notifyUsers(supabase, {
+    workspaceId: input.workspaceId,
+    userIds: recipients,
+    title: "New client update",
+    message: input.title,
+    type: "client_update",
+    link: "/updates",
+    entityType: "note",
+    entityId: input.noteId,
   });
 }
 

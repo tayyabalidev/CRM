@@ -26,6 +26,7 @@ export default async function FilesPage({
   const params = parseFileListParams(await searchParams);
   const { workspace } = await requireWorkspace();
   const canManage = isStaffRole(workspace.role);
+  const canUpload = canManage || Boolean(workspace.clientId);
   const [result, clients, projects, tasks, invoices] = await Promise.all([
     getFilePageData(workspace.id, params),
     listPaymentClients(workspace.id),
@@ -53,7 +54,7 @@ export default async function FilesPage({
     Boolean(params.projectId) ||
     Boolean(params.taskId) ||
     Boolean(params.invoiceId);
-  const addButton = canManage ? (
+  const addButton = canUpload ? (
     <FileUploadSheet
       workspaceId={workspace.id}
       clients={clientOptions}
@@ -61,6 +62,7 @@ export default async function FilesPage({
       tasks={tasks}
       invoices={invoiceOptions}
       defaultClientId={defaultClientId || undefined}
+      lockedClientId={!canManage ? (workspace.clientId ?? undefined) : undefined}
       defaultProjectId={params.projectId || undefined}
       defaultTaskId={params.taskId || undefined}
       defaultInvoiceId={params.invoiceId || undefined}
@@ -80,7 +82,7 @@ export default async function FilesPage({
           <p className="text-sm text-muted-foreground">
             {canManage
               ? "Private uploads for clients, projects, tasks, and invoices. Nothing is public."
-              : "Files shared on your projects, tasks, and invoices."}
+              : "Files shared on your projects, tasks, and invoices. You can also upload files for your team."}
           </p>
         </div>
         {addButton}

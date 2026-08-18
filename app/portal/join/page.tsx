@@ -5,7 +5,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { PortalJoinForm } from "@/components/portal/portal-join-form";
 import { previewPortalInviteAction } from "@/lib/actions/portal";
 import { AUTH_PATHS } from "@/lib/auth/paths";
-import { requireAuthState } from "@/lib/auth/session";
+import { getAuthState } from "@/lib/auth/session";
 import { isUuid } from "@/lib/utils/ids";
 
 export const metadata: Metadata = {
@@ -25,15 +25,20 @@ export default async function PortalJoinPage({
 }: {
   searchParams: Promise<{ token?: string }>;
 }) {
-  await requireAuthState();
   const token = (await searchParams).token ?? "";
+  const nextPath = `/portal/join?token=${encodeURIComponent(token)}`;
 
   if (!isUuid(token)) {
     return (
       <AuthShell title="Invite not valid" description="This client portal link is missing or broken.">
-        <Link href="/" className="text-sm font-medium hover:underline">
-          Go to the dashboard
-        </Link>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <Link href={AUTH_PATHS.login} className="font-medium hover:underline">
+            Sign in
+          </Link>
+          <Link href={AUTH_PATHS.signup} className="font-medium hover:underline">
+            Create account
+          </Link>
+        </div>
       </AuthShell>
     );
   }
@@ -52,6 +57,40 @@ export default async function PortalJoinPage({
         }
       >
         <p className="text-sm text-muted-foreground">Ask the workspace to send a new link.</p>
+      </AuthShell>
+    );
+  }
+
+  const state = await getAuthState();
+  if (!state) {
+    return (
+      <AuthShell
+        title="Client portal invite"
+        description={`You were invited to ${preview.workspaceName} for ${preview.clientName}.`}
+        footer={
+          <span>
+            Already have an account?{" "}
+            <Link
+              href={`${AUTH_PATHS.login}?next=${encodeURIComponent(nextPath)}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              Sign in
+            </Link>
+          </span>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Sign in or create an account to accept this invite and access your shared projects, files, and
+            invoices.
+          </p>
+          <Link
+            href={`${AUTH_PATHS.signup}?next=${encodeURIComponent(nextPath)}`}
+            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+          >
+            Create account to continue
+          </Link>
+        </div>
       </AuthShell>
     );
   }

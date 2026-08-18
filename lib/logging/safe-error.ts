@@ -1,3 +1,5 @@
+import { captureException } from "@/lib/logging/sentry";
+
 type SafeErrorPayload = {
   context: string;
   name?: string;
@@ -34,6 +36,7 @@ function serializeUnknown(error: unknown): Omit<SafeErrorPayload, "context"> {
 export function logServerError(context: string, error: unknown) {
   const payload: SafeErrorPayload = { context, ...serializeUnknown(error) };
   console.error("[workflow]", payload);
+  captureException(error, { context });
 }
 
 /** Log a DB/service failure, then throw a user-facing message (no raw DB text). */

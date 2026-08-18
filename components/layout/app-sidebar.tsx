@@ -55,6 +55,7 @@ const icons: Record<NavItem["icon"], LucideIcon> = {
   payments: CreditCard,
   files: FolderOpen,
   notes: StickyNote,
+  updates: StickyNote,
   activity: Activity,
   reports: PieChart,
   settings: Settings,

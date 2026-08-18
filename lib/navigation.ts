@@ -14,6 +14,7 @@ export type NavItem = {
     | "payments"
     | "files"
     | "notes"
+    | "updates"
     | "activity"
     | "reports"
     | "settings";
@@ -35,6 +36,7 @@ export const financeNav: NavItem[] = [
 export const workspaceNav: NavItem[] = [
   { title: "Files", href: "/files", icon: "files" },
   { title: "Notes", href: "/notes", icon: "notes" },
+  { title: "Updates", href: "/updates", icon: "updates" },
   { title: "Activity", href: "/activity", icon: "activity" },
   { title: "Reports", href: "/reports", icon: "reports" },
 ];
@@ -59,7 +61,14 @@ export function navForRole(role: WorkspaceRole) {
   return {
     main: mainNav.filter((item) => item.href !== "/clients" && item.href !== "/time"),
     finance: financeNav,
-    workspace: workspaceNav.filter((item) => item.href !== "/reports"),
+    workspace: workspaceNav
+      .filter((item) => item.href !== "/reports" && item.href !== "/notes")
+      .map((item) => {
+        if (item.href === "/activity") {
+          return { ...item, title: "Timeline" };
+        }
+        return item;
+      }),
     showSettings: false,
   };
 }
