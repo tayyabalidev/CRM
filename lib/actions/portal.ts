@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 
 import { requireAuthState } from "@/lib/auth/session";
 import { requireWorkspace } from "@/lib/auth/workspace";
+import { sendPortalInviteEmail } from "@/lib/email/send-invite";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
+import { getSiteUrl } from "@/lib/utils/site-url";
 import { isStaffRole } from "@/types/index";
 
 const INVITE_DAYS = 14;
@@ -30,7 +32,9 @@ type InvitePreview =
   | { workspaceName: string; clientName: string }
   | { error: "invalid" | "used" | "expired" };
 
-export async function createPortalInviteAction(clientId: string): Promise<{ token: string } | { error: string }> {
+export async function createPortalInviteAction(
+  clientId: string,
+): Promise<{ token: string; emailSent: boolean } | { error: string }> {
   if (!isUuid(clientId)) {
     return { error: "Client not found." };
   }
@@ -44,7 +48,7 @@ export async function createPortalInviteAction(clientId: string): Promise<{ toke
   const supabase = await createClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id")
+    .select("id, name, email")
     .eq("id", clientId)
     .eq("workspace_id", workspace.id)
     .maybeSingle();
@@ -70,7 +74,21 @@ export async function createPortalInviteAction(clientId: string): Promise<{ toke
   }
 
   revalidatePath(`/clients/${clientId}`);
-  return { token: data.token };
+
+  let emailSent = false;
+  if (client.email) {
+    const siteUrl = await getSiteUrl();
+    const result = await sendPortalInviteEmail({
+      to: client.email,
+      workspaceName: workspace.name,
+      clientName: client.name,
+      inviteUrl: `${siteUrl}/portal/join?token=${data.token}`,
+      expiresInDays: INVITE_DAYS,
+    });
+    emailSent = result.sent;
+  }
+
+  return { token: data.token, emailSent };
 }
 
 export async function revokePortalInviteAction(inviteId: string, clientId: string) {

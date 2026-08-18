@@ -54,6 +54,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       role={workspace.role}
       unreadNotifications={unreadNotifications}
       timeZone={workspace.timezone}
+      userId={state.user.id}
     >
       {children}
     </AppShell>

@@ -24,6 +24,7 @@ export function AppShell({
   role,
   unreadNotifications = 0,
   timeZone = "UTC",
+  userId,
 }: {
   children: ReactNode;
   defaultSidebarOpen: boolean;
@@ -38,6 +39,7 @@ export function AppShell({
   role: WorkspaceRole;
   unreadNotifications?: number;
   timeZone?: string;
+  userId: string;
 }) {
   return (
     <TimerProvider canTrack={canTrackTime} initialRunning={runningTimer}>
@@ -56,6 +58,8 @@ export function AppShell({
               email={userEmail}
               unreadNotifications={unreadNotifications}
               timeZone={timeZone}
+              workspaceId={activeWorkspaceId}
+              userId={userId}
             />
             <div className="flex flex-1 flex-col">{children}</div>
           </SidebarInset>

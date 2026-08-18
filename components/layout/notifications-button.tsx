@@ -12,6 +12,7 @@ import {
   type NotificationsPayload,
 } from "@/lib/actions/notifications";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications";
 import { formatDateTime } from "@/lib/utils/dates";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,14 +22,22 @@ import { cn } from "@/lib/utils";
 export function NotificationsButton({
   initialUnread = 0,
   timeZone = "UTC",
+  workspaceId,
+  userId,
 }: {
   initialUnread?: number;
   timeZone?: string;
+  workspaceId: string;
+  userId: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [unreadCount, setUnreadCount] = useState(initialUnread);
+  const { unreadCount, setUnreadCount } = useRealtimeNotifications({
+    workspaceId,
+    userId,
+    initialUnread,
+  });
   const [payload, setPayload] = useState<NotificationsPayload | null>(null);
 
   function refresh() {

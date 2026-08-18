@@ -100,8 +100,12 @@ export function PortalInviteCard({
                 setError(result.error);
                 return;
               }
-              const copied = await copyToClipboard(inviteUrl(result.token));
-              toast(copied ? "Invite link copied" : "Invite link ready — copy it from the field");
+              if (result.emailSent) {
+                toast("Invite sent via email");
+              } else {
+                const copied = await copyToClipboard(inviteUrl(result.token));
+                toast(copied ? "Invite link copied" : "Invite link ready — copy it from the field");
+              }
             });
           }}
         >

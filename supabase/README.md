@@ -52,3 +52,13 @@ Created by `0003_files_storage.sql`, hardened by `0007_security_hardening.sql`:
 
 - Bucket: `workspace-files` (private, 20 MB limit)
 - No manual bucket setup required after those migrations succeed
+
+## Realtime
+
+To enable instant in-app notification updates:
+
+1. Go to **Table Editor → notifications**.
+2. Click the table name dropdown or settings icon.
+3. Toggle **Enable Realtime** on.
+
+Without this, the notification bell badge will still work but only refreshes when the popover is opened.
