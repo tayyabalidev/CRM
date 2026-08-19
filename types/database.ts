@@ -840,6 +840,8 @@ export type Database = {
           assigned_to: string | null;
           due_date: string | null;
           estimated_minutes: number | null;
+          kind: Database["public"]["Enums"]["task_kind"];
+          created_by: string | null;
           completed_at: string | null;
           created_at: string;
           updated_at: string;
@@ -856,6 +858,8 @@ export type Database = {
           assigned_to?: string | null;
           due_date?: string | null;
           estimated_minutes?: number | null;
+          kind?: Database["public"]["Enums"]["task_kind"];
+          created_by?: string | null;
           completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -872,6 +876,8 @@ export type Database = {
           assigned_to?: string | null;
           due_date?: string | null;
           estimated_minutes?: number | null;
+          kind?: Database["public"]["Enums"]["task_kind"];
+          created_by?: string | null;
           completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -901,6 +907,13 @@ export type Database = {
           {
             foreignKeyName: "tasks_assigned_to_fkey";
             columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey";
+            columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -1084,6 +1097,16 @@ export type Database = {
         Args: { p_token: string };
         Returns: Json;
       };
+      complete_onboarding: {
+        Args: {
+          p_full_name: string;
+          p_workspace_name: string;
+          p_workspace_slug: string;
+          p_currency: string;
+          p_timezone: string;
+        };
+        Returns: string;
+      };
       preview_workspace_invite: {
         Args: { p_token: string };
         Returns: Json;
@@ -1158,6 +1181,7 @@ export type Database = {
         | "wise"
         | "other";
       priority: "low" | "medium" | "high" | "urgent";
+      task_kind: "task" | "bug";
       project_status:
         | "planning"
         | "active"

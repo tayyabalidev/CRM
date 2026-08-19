@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeSearch } from "@/lib/utils/text";
 import { isStaffRole, type WorkspaceRole } from "@/types/index";
 
-export type SearchEntity = "client" | "project" | "task" | "invoice";
+export type SearchEntity = "client" | "project" | "task" | "bug" | "invoice";
 
 export type SearchHit = {
   id: string;
@@ -57,7 +57,7 @@ export async function searchWorkspace(
 
   let tasksQuery = supabase
     .from("tasks")
-    .select("id, title, status, projects ( name )")
+    .select("id, title, status, kind, projects ( name )")
     .eq("workspace_id", workspaceId)
     .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
     .order("title", { ascending: true })
@@ -112,7 +112,7 @@ export async function searchWorkspace(
     const projectName = relatedName(task.projects as { name: string } | { name: string }[] | null);
     hits.push({
       id: task.id,
-      type: "task",
+      type: task.kind === "bug" ? "bug" : "task",
       title: task.title,
       subtitle: [projectName, task.status.replaceAll("_", " ")].filter(Boolean).join(" · ") || null,
       href: `/tasks/${task.id}`,

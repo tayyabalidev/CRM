@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Activity,
+  Bug,
   FolderKanban,
   ListTodo,
   Paperclip,
@@ -78,7 +79,35 @@ export function ClientRelated({
           {detail.tasks.map((task) => (
             <li key={task.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{task.title}</p>
+                <Link href={`/tasks/${task.id}`} className="truncate text-sm font-medium hover:underline">
+                  {task.title}
+                </Link>
+                <p className="truncate text-xs text-muted-foreground">{task.projectName ?? "No project"}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <PriorityBadge value={task.priority} />
+                <StatusBadge value={task.status} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </RelatedSection>
+
+      <RelatedSection
+        title="Bugs"
+        description="Issues reported for this client."
+        emptyTitle="No bugs"
+        emptyDescription="Bug reports for this client or their projects will appear here."
+        icon={<Bug className="size-4" />}
+        isEmpty={detail.bugs.length === 0}
+      >
+        <ul className="divide-y">
+          {detail.bugs.map((task) => (
+            <li key={task.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1">
+                <Link href={`/tasks/${task.id}`} className="truncate text-sm font-medium hover:underline">
+                  {task.title}
+                </Link>
                 <p className="truncate text-xs text-muted-foreground">{task.projectName ?? "No project"}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

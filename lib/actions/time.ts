@@ -19,6 +19,7 @@ function revalidateTime(projectId?: string | null, taskId?: string | null) {
   revalidatePath("/time");
   revalidatePath("/projects");
   revalidatePath("/tasks");
+  revalidatePath("/bugs");
 
   if (projectId) {
     revalidatePath(`/projects/${projectId}`);

@@ -145,7 +145,8 @@ export async function getDashboardData(
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", workspaceId)
-      .neq("status", "completed"),
+      .neq("status", "completed")
+      .eq("kind", "task"),
     supabase
       .from("projects")
       .select("id, name, progress, due_date, status, clients ( name )")
@@ -158,6 +159,7 @@ export async function getDashboardData(
       .select("id, title, priority, due_date, status, projects ( name )")
       .eq("workspace_id", workspaceId)
       .neq("status", "completed")
+      .eq("kind", "task")
       .not("due_date", "is", null)
       .order("due_date", { ascending: true })
       .limit(40),
@@ -199,6 +201,7 @@ export async function getDashboardData(
       .select("id, title, completed_at, updated_at")
       .eq("workspace_id", workspaceId)
       .eq("status", "completed")
+      .eq("kind", "task")
       .order("completed_at", { ascending: false, nullsFirst: false })
       .limit(5),
     supabase

@@ -113,6 +113,7 @@ export type ProjectDetail = {
   trackedSeconds: number;
   team: ProjectMember[];
   tasks: ProjectTask[];
+  bugs: ProjectTask[];
   timeEntries: ProjectTimeEntry[];
   payments: ProjectPayment[];
   invoices: ProjectInvoice[];
@@ -195,7 +196,12 @@ export async function listProjects(
   const rows = data ?? [];
   const ids = rows.map((project) => project.id);
   const { data: tasks } = ids.length
-    ? await supabase.from("tasks").select("project_id, status").eq("workspace_id", workspaceId).in("project_id", ids)
+    ? await supabase
+        .from("tasks")
+        .select("project_id, status")
+        .eq("workspace_id", workspaceId)
+        .eq("kind", "task")
+        .in("project_id", ids)
     : { data: [] };
 
   const total = count ?? 0;
@@ -256,6 +262,7 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
     membersResult,
     taskTotalResult,
     taskCompletedResult,
+    bugsResult,
     assigneesResult,
     allTimeResult,
     screenshotNotes,
@@ -265,6 +272,7 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
       .select("id, title, status, priority, due_date, assigned_to")
       .eq("workspace_id", workspaceId)
       .eq("project_id", projectId)
+      .eq("kind", "task")
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(20),
     supabase
@@ -324,13 +332,23 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", workspaceId)
-      .eq("project_id", projectId),
+      .eq("project_id", projectId)
+      .eq("kind", "task"),
     supabase
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", workspaceId)
       .eq("project_id", projectId)
+      .eq("kind", "task")
       .eq("status", "completed"),
+    supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date, assigned_to")
+      .eq("workspace_id", workspaceId)
+      .eq("project_id", projectId)
+      .eq("kind", "bug")
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .limit(20),
     supabase
       .from("tasks")
       .select("assigned_to")
@@ -390,6 +408,13 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
     trackedSeconds,
     team,
     tasks: tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.due_date,
+    })),
+    bugs: (bugsResult.data ?? []).map((task) => ({
       id: task.id,
       title: task.title,
       status: task.status,

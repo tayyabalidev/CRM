@@ -9,6 +9,7 @@ export type NavItem = {
     | "clients"
     | "projects"
     | "tasks"
+    | "bugs"
     | "time"
     | "invoices"
     | "payments"
@@ -25,6 +26,7 @@ export const mainNav: NavItem[] = [
   { title: "Clients", href: "/clients", icon: "clients" },
   { title: "Projects", href: "/projects", icon: "projects" },
   { title: "Tasks", href: "/tasks", icon: "tasks" },
+  { title: "Bugs", href: "/bugs", icon: "bugs" },
   { title: "Time", href: "/time", icon: "time" },
 ];
 

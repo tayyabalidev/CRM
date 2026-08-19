@@ -27,6 +27,7 @@ export function toFormTask(task: TaskListItem) {
     priority: task.priority,
     status: task.status,
     estimatedMinutes: task.estimatedMinutes,
+    kind: task.kind,
   };
 }
 
@@ -149,11 +150,14 @@ export function TaskAssigneeAvatar({ name }: { name: string | null }) {
 export function TaskProjectHeader({
   group,
   actions,
+  noun = "task",
 }: {
   group: TaskProjectGroup;
   actions?: ReactNode;
+  noun?: "task" | "bug";
 }) {
-  const count = `${group.tasks.length} ${group.tasks.length === 1 ? "task" : "tasks"}`;
+  const plural = noun === "bug" ? "bugs" : "tasks";
+  const count = `${group.tasks.length} ${group.tasks.length === 1 ? noun : plural}`;
 
   return (
     <div className="flex items-center justify-between gap-3 border-b px-4 py-3">

@@ -1,6 +1,6 @@
 import { TaskIndexPage } from "@/components/tasks/task-index-page";
 
-export default function TasksPage({
+export default function BugsPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -17,5 +17,5 @@ export default function TasksPage({
     hide?: string;
   }>;
 }) {
-  return <TaskIndexPage kind="task" searchParams={searchParams} />;
+  return <TaskIndexPage kind="bug" searchParams={searchParams} />;
 }

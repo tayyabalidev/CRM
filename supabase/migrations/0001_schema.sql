@@ -45,6 +45,7 @@ drop function if exists public.can_write_invoice(uuid) cascade;
 drop function if exists public.is_last_owner(uuid, uuid) cascade;
 drop function if exists public.can_read_activity(uuid, text, uuid) cascade;
 
+drop type if exists public.task_kind cascade;
 drop type if exists public.note_visibility cascade;
 drop type if exists public.invoice_status cascade;
 drop type if exists public.payment_method cascade;
@@ -68,6 +69,7 @@ create type public.project_status as enum (
   'cancelled'
 );
 create type public.priority as enum ('low', 'medium', 'high', 'urgent');
+create type public.task_kind as enum ('task', 'bug');
 create type public.task_status as enum (
   'backlog',
   'todo',
@@ -252,6 +254,8 @@ create table public.tasks (
   assigned_to uuid references public.profiles (id) on delete set null,
   due_date timestamptz,
   estimated_minutes integer check (estimated_minutes is null or estimated_minutes >= 0),
+  kind public.task_kind not null default 'task',
+  created_by uuid references public.profiles (id) on delete set null,
   completed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -440,6 +444,7 @@ create index tasks_project_id_idx on public.tasks (project_id);
 create index tasks_client_id_idx on public.tasks (client_id);
 create index tasks_assigned_to_idx on public.tasks (assigned_to);
 create index tasks_due_date_idx on public.tasks (workspace_id, due_date);
+create index tasks_workspace_kind_idx on public.tasks (workspace_id, kind);
 
 create index task_comments_task_id_idx on public.task_comments (task_id);
 create index task_comments_user_id_idx on public.task_comments (user_id);

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 export const projectTabs = [
   "overview",
   "tasks",
+  "bugs",
   "screenshots",
   "time",
   "payments",
@@ -19,6 +20,7 @@ export type ProjectTab = (typeof projectTabs)[number];
 const labels: Record<ProjectTab, string> = {
   overview: "Overview",
   tasks: "Tasks",
+  bugs: "Bugs",
   time: "Time",
   payments: "Payments",
   invoices: "Invoices",

@@ -27,6 +27,7 @@ export function TaskList({
   emptyAction,
   hasFilters,
   variant = "list",
+  noun = "task",
 }: {
   tasks: TaskListItem[];
   timeZone: string;
@@ -36,18 +37,23 @@ export function TaskList({
   emptyAction?: ReactNode;
   hasFilters: boolean;
   variant?: "list" | "table";
+  noun?: "task" | "bug";
 }) {
+  const plural = noun === "bug" ? "bugs" : "tasks";
+
   if (tasks.length === 0) {
     return (
       <Card>
         <CardContent>
           <EmptyState
             icon={<ListTodo className="size-4" />}
-            title={hasFilters ? "No matching tasks" : "No tasks yet"}
+            title={hasFilters ? `No matching ${plural}` : `No ${plural} yet`}
             description={
               hasFilters
                 ? "Try a different search or filter."
-                : "Create a task to track work across your projects."
+                : noun === "bug"
+                  ? "Report a bug to keep it separate from regular work."
+                  : "Create a task to track work across your projects."
             }
             action={hasFilters ? undefined : emptyAction}
           />
@@ -63,13 +69,13 @@ export function TaskList({
     <div className="space-y-4">
       {groups.map((group) => (
         <Card key={group.projectId ?? "none"} className="gap-0 py-0">
-          <TaskProjectHeader group={group} />
+          <TaskProjectHeader group={group} noun={noun} />
           {isTable ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b text-left text-xs text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Task</th>
+                    <th className="px-4 py-2 font-medium">{noun === "bug" ? "Bug" : "Task"}</th>
                     <th className="px-4 py-2 font-medium">Status</th>
                     <th className="px-4 py-2 font-medium">Due</th>
                     <th className="px-4 py-2 font-medium">Priority</th>

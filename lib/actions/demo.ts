@@ -14,6 +14,7 @@ function revalidateDemoPaths() {
   revalidatePath("/clients");
   revalidatePath("/projects");
   revalidatePath("/tasks");
+  revalidatePath("/bugs");
   revalidatePath("/invoices");
   revalidatePath("/payments");
   revalidatePath("/time");

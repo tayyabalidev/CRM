@@ -85,7 +85,15 @@ export function parseTaskListParams(searchParams: {
   };
 }
 
-export function taskListHref(current: TaskListParams, patch: Partial<TaskListParams> = {}) {
+export function taskListPath(kind: "task" | "bug" = "task") {
+  return kind === "bug" ? "/bugs" : "/tasks";
+}
+
+export function taskListHref(
+  current: TaskListParams,
+  patch: Partial<TaskListParams> = {},
+  listPath = "/tasks",
+) {
   const next = { ...current, ...patch };
   const params = new URLSearchParams();
 
@@ -134,7 +142,7 @@ export function taskListHref(current: TaskListParams, patch: Partial<TaskListPar
   }
 
   const query = params.toString();
-  return query ? `/tasks?${query}` : "/tasks";
+  return query ? `${listPath}?${query}` : listPath;
 }
 
 export function hasTaskFilters(params: TaskListParams) {

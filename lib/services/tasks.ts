@@ -7,7 +7,7 @@ import { entrySeconds } from "@/lib/services/time";
 import { addCalendarDays, zonedDateKey } from "@/lib/utils/dates";
 import { sanitizeSearch } from "@/lib/utils/text";
 import { OPTION_LIST_LIMIT, ensureIncludedOption } from "@/lib/utils/options";
-import type { Priority, TaskStatus } from "@/types/index";
+import type { Priority, TaskKind, TaskStatus } from "@/types/index";
 import type { Tables } from "@/types/database";
 
 export type TaskRecord = Tables<"tasks">;
@@ -29,6 +29,7 @@ export type TaskListItem = {
   assigneeId: string | null;
   assigneeName: string | null;
   estimatedMinutes: number | null;
+  kind: TaskKind;
 };
 
 export type TaskListResult = {
@@ -116,6 +117,7 @@ export async function listTasks(
   workspaceId: string,
   params: TaskListParams,
   timeZone: string,
+  kind: TaskKind = "task",
 ): Promise<TaskListResult> {
   const supabase = await createClient();
   const search = sanitizeSearch(params.q);
@@ -129,10 +131,11 @@ export async function listTasks(
   let query = supabase
     .from("tasks")
     .select(
-      "id, title, description, status, priority, due_date, project_id, assigned_to, estimated_minutes, projects ( name ), profiles ( full_name )",
+      "id, title, description, status, priority, due_date, project_id, assigned_to, estimated_minutes, kind, projects ( name ), profiles!tasks_assigned_to_fkey ( full_name )",
       { count: "exact" },
     )
     .eq("workspace_id", workspaceId)
+    .eq("kind", kind)
     .order(params.sort, { ascending: params.dir === "asc", nullsFirst: false });
 
   if (params.status !== "all") {
@@ -166,7 +169,19 @@ export async function listTasks(
   }
 
   if (search) {
-    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+    const { data: matchingProjects } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("name", `%${search}%`);
+    const projectIds = (matchingProjects ?? []).map((project) => project.id);
+    const filters = [`title.ilike.%${search}%`, `description.ilike.%${search}%`];
+
+    if (projectIds.length > 0) {
+      filters.push(`project_id.in.(${projectIds.join(",")})`);
+    }
+
+    query = query.or(filters.join(","));
   }
 
   query = paged ? query.range(from, to) : query.limit(TASK_BOARD_LIMIT);
@@ -174,7 +189,7 @@ export async function listTasks(
   const { data, count, error } = await query;
 
   if (error) {
-    throwUserError("tasks.list", error, "Could not load tasks.");
+    throwUserError(kind === "bug" ? "bugs.list" : "tasks.list", error, `Could not load ${kind === "bug" ? "bugs" : "tasks"}.`);
   }
 
   const total = count ?? 0;
@@ -192,6 +207,7 @@ export async function listTasks(
       assigneeId: task.assigned_to,
       assigneeName: relatedProfile(task.profiles)?.full_name ?? null,
       estimatedMinutes: task.estimated_minutes,
+      kind: task.kind,
     })),
     total,
     page: params.page,
@@ -205,7 +221,7 @@ export async function getTaskDetail(workspaceId: string, taskId: string): Promis
 
   const { data: task } = await supabase
     .from("tasks")
-    .select("*, projects ( name, clients ( name ) ), profiles ( full_name )")
+    .select("*, projects ( name, clients ( name ) ), profiles!tasks_assigned_to_fkey ( full_name )")
     .eq("workspace_id", workspaceId)
     .eq("id", taskId)
     .maybeSingle();
@@ -265,6 +281,8 @@ export async function getTaskDetail(workspaceId: string, taskId: string): Promis
       assigned_to: task.assigned_to,
       due_date: task.due_date,
       estimated_minutes: task.estimated_minutes,
+      kind: task.kind,
+      created_by: task.created_by,
       completed_at: task.completed_at,
       created_at: task.created_at,
       updated_at: task.updated_at,

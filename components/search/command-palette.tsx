@@ -12,7 +12,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { FileText, LayoutGrid, ListTodo, Users } from "lucide-react";
+import { Bug, FileText, LayoutGrid, ListTodo, Users } from "lucide-react";
 
 import { searchWorkspaceAction } from "@/lib/actions/search";
 import type { SearchEntity, SearchHit } from "@/lib/services/search";
@@ -37,6 +37,7 @@ const groupLabels: Record<SearchEntity, string> = {
   client: "Clients",
   project: "Projects",
   task: "Tasks",
+  bug: "Bugs",
   invoice: "Invoices",
 };
 
@@ -44,11 +45,12 @@ const groupIcons = {
   client: Users,
   project: LayoutGrid,
   task: ListTodo,
+  bug: Bug,
   invoice: FileText,
 } as const;
 
 function groupHits(hits: SearchHit[]) {
-  const order: SearchEntity[] = ["client", "project", "task", "invoice"];
+  const order: SearchEntity[] = ["client", "project", "task", "bug", "invoice"];
   return order
     .map((type) => ({
       type,

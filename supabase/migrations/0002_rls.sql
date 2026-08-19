@@ -532,7 +532,14 @@ create policy tasks_insert
   on public.tasks
   for insert
   to authenticated
-  with check (public.is_workspace_staff(workspace_id));
+  with check (
+    public.is_workspace_staff(workspace_id)
+    or (
+      kind = 'bug'
+      and created_by = auth.uid()
+      and public.is_scoped_client(workspace_id, client_id)
+    )
+  );
 
 create policy tasks_update
   on public.tasks

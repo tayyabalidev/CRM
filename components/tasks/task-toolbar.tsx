@@ -15,17 +15,21 @@ export function TaskToolbar({
   projects,
   assignees,
   hideAssignees = false,
+  listPath = "/tasks",
+  searchPlaceholder = "Search tasks",
 }: {
   params: TaskListParams;
   projects: TaskFormProject[];
   assignees: TaskFormAssignee[];
   hideAssignees?: boolean;
+  listPath?: string;
+  searchPlaceholder?: string;
 }) {
   const router = useRouter();
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <form action="/tasks" className="relative min-w-0 flex-1">
+      <form action={listPath} className="relative min-w-0 flex-1">
         <input type="hidden" name="view" value={params.view} />
         {params.hideComplete ? <input type="hidden" name="hide" value="complete" /> : null}
         {params.status !== "all" ? <input type="hidden" name="status" value={params.status} /> : null}
@@ -36,7 +40,7 @@ export function TaskToolbar({
         {params.sort !== "due_date" ? <input type="hidden" name="sort" value={params.sort} /> : null}
         {params.dir !== "asc" ? <input type="hidden" name="dir" value={params.dir} /> : null}
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input name="q" defaultValue={params.q} placeholder="Search tasks" className="pl-8" />
+        <Input name="q" defaultValue={params.q} placeholder={searchPlaceholder} className="pl-8" />
       </form>
       <div className="flex flex-wrap items-center gap-2">
         <Label className="gap-2 text-sm font-normal text-muted-foreground">
@@ -45,17 +49,18 @@ export function TaskToolbar({
             className="size-4 rounded border"
             checked={params.hideComplete}
             onChange={() => {
-              router.push(taskListHref(params, { hideComplete: !params.hideComplete, page: 1 }));
+              router.push(taskListHref(params, { hideComplete: !params.hideComplete, page: 1 }, listPath));
             }}
           />
           Hide complete
         </Label>
-        <TaskViewToggle params={params} />
+        <TaskViewToggle params={params} listPath={listPath} />
         <TaskFilterSheet
           params={params}
           projects={projects}
           assignees={assignees}
           hideAssignees={hideAssignees}
+          listPath={listPath}
         />
       </div>
     </div>

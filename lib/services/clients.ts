@@ -84,6 +84,7 @@ export type ClientDetail = {
   paymentCount: number;
   projects: ClientProject[];
   tasks: ClientTask[];
+  bugs: ClientTask[];
   invoices: ClientInvoice[];
   payments: ClientPayment[];
   files: ClientFile[];
@@ -285,7 +286,8 @@ export async function getClientDetail(
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", workspaceId)
-      .eq("client_id", clientId),
+      .eq("client_id", clientId)
+      .eq("kind", "task"),
   ]);
 
   const projects = projectsResult.data ?? [];
@@ -295,6 +297,7 @@ export async function getClientDetail(
     .from("tasks")
     .select("id, title, status, priority, due_date, client_id, project_id, projects ( name )")
     .eq("workspace_id", workspaceId)
+    .eq("kind", "task")
     .order("due_date", { ascending: true, nullsFirst: false })
     .limit(8);
 
@@ -305,6 +308,22 @@ export async function getClientDetail(
   }
 
   const { data: tasks } = await tasksQuery;
+
+  let bugsQuery = supabase
+    .from("tasks")
+    .select("id, title, status, priority, due_date, client_id, project_id, projects ( name )")
+    .eq("workspace_id", workspaceId)
+    .eq("kind", "bug")
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .limit(8);
+
+  if (projectIds.length > 0) {
+    bugsQuery = bugsQuery.or(`client_id.eq.${clientId},project_id.in.(${projectIds.join(",")})`);
+  } else {
+    bugsQuery = bugsQuery.eq("client_id", clientId);
+  }
+
+  const { data: bugs } = await bugsQuery;
 
   const { data: paymentTotals } = await supabase
     .from("payments")
@@ -337,6 +356,14 @@ export async function getClientDetail(
       dueDate: project.due_date,
     })),
     tasks: (tasks ?? []).map((task) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.due_date,
+      projectName: relatedName(task.projects),
+    })),
+    bugs: (bugs ?? []).map((task) => ({
       id: task.id,
       title: task.title,
       status: task.status,

@@ -8,6 +8,7 @@ export const projectStatuses = [
   "cancelled",
 ] as const;
 export const priorities = ["low", "medium", "high", "urgent"] as const;
+export const taskKinds = ["task", "bug"] as const;
 export const taskStatuses = [
   "backlog",
   "todo",
@@ -37,6 +38,7 @@ export type WorkspaceRole = (typeof workspaceRoles)[number];
 export type ClientStatus = (typeof clientStatuses)[number];
 export type ProjectStatus = (typeof projectStatuses)[number];
 export type Priority = (typeof priorities)[number];
+export type TaskKind = (typeof taskKinds)[number];
 export type TaskStatus = (typeof taskStatuses)[number];
 export type PaymentMethod = (typeof paymentMethods)[number];
 export type InvoiceStatus = (typeof invoiceStatuses)[number];

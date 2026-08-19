@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { logActivity } from "@/lib/services/activity";
-import { notifyClientPortalUsers, notifyTaskAssigned } from "@/lib/services/notifications";
+import { notifyClientPortalUsers, notifyTaskAssigned, notifyWorkspaceStaff } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isTaskStatus } from "@/lib/tasks/params";
 import { fromDateTimeLocalValue } from "@/lib/utils/dates";
@@ -17,6 +17,7 @@ import { isStaffRole, type TaskStatus } from "@/types/index";
 function revalidateTasks(taskId?: string, projectId?: string | null, clientId?: string | null) {
   revalidatePath("/");
   revalidatePath("/tasks");
+  revalidatePath("/bugs");
   revalidatePath("/projects");
   revalidatePath("/clients");
 
@@ -59,14 +60,22 @@ export async function addTaskAction(input: unknown) {
   }
 
   const { workspace, user } = await requireWorkspace();
+  const staff = isStaffRole(workspace.role);
+  const kind = parsed.data.kind;
 
-  if (!isStaffRole(workspace.role)) {
+  if (!staff && kind !== "bug") {
     return { error: "You do not have permission to add tasks." };
   }
 
   const supabase = await createClient();
   const projectId = emptyToNull(parsed.data.projectId);
-  const assigneeId = emptyToNull(parsed.data.assigneeId);
+  const assigneeId = staff ? emptyToNull(parsed.data.assigneeId) : null;
+  const status = staff ? parsed.data.status : "todo";
+  const estimatedHours = staff ? parsed.data.estimatedHours : "";
+
+  if (kind === "bug" && !projectId) {
+    return { error: "Choose a project for this bug." };
+  }
 
   if (projectId) {
     const { data: project } = await supabase
@@ -91,15 +100,17 @@ export async function addTaskAction(input: unknown) {
       assigned_to: assigneeId,
       due_date: fromDateTimeLocalValue(parsed.data.dueDate),
       priority: parsed.data.priority,
-      status: parsed.data.status,
-      estimated_minutes: estimatedMinutes(parsed.data.estimatedHours),
-      completed_at: completedAtFor(parsed.data.status),
+      status,
+      kind,
+      created_by: user.id,
+      estimated_minutes: estimatedMinutes(estimatedHours),
+      completed_at: completedAtFor(status),
     })
-    .select("id, title, project_id, client_id")
+    .select("id, title, project_id, client_id, kind")
     .single();
 
   if (error || !data) {
-    return { error: "Could not add this task. Try again." };
+    return { error: kind === "bug" ? "Could not add this bug. Try again." : "Could not add this task. Try again." };
   }
 
   await logActivity(supabase, {
@@ -108,7 +119,7 @@ export async function addTaskAction(input: unknown) {
     entityType: "task",
     entityId: data.id,
     action: "created",
-    message: `created “${data.title}”.`,
+    message: kind === "bug" ? `reported “${data.title}”.` : `created “${data.title}”.`,
   });
 
   if (assigneeId) {
@@ -121,11 +132,24 @@ export async function addTaskAction(input: unknown) {
     });
   }
 
+  if (!staff) {
+    await notifyWorkspaceStaff(supabase, {
+      workspaceId: workspace.id,
+      actorId: user.id,
+      title: "New bug report",
+      message: `“${data.title}” was reported.`,
+      type: "task_created",
+      link: `/tasks/${data.id}`,
+      entityType: "task",
+      entityId: data.id,
+    });
+  }
+
   await notifyClientPortalUsers(supabase, {
     workspaceId: workspace.id,
     clientId: data.client_id,
     actorId: user.id,
-    title: "New task",
+    title: kind === "bug" ? "New bug" : "New task",
     message: `“${data.title}” was added.`,
     type: "task_created",
     link: `/tasks/${data.id}`,
@@ -365,7 +389,7 @@ export async function deleteTaskAction(taskId: string) {
   const supabase = await createClient();
   const { data: task } = await supabase
     .from("tasks")
-    .select("id, title, project_id, client_id")
+    .select("id, title, project_id, client_id, kind")
     .eq("id", taskId)
     .eq("workspace_id", workspace.id)
     .maybeSingle();
@@ -390,5 +414,5 @@ export async function deleteTaskAction(taskId: string) {
   });
 
   revalidateTasks(undefined, task.project_id, task.client_id);
-  redirect("/tasks");
+  redirect(task.kind === "bug" ? "/bugs" : "/tasks");
 }

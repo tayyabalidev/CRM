@@ -379,6 +379,7 @@ export async function syncDeadlineNotifications(
       .select("id, title, due_date, assigned_to, status")
       .eq("workspace_id", workspaceId)
       .neq("status", "completed")
+      .eq("kind", "task")
       .not("due_date", "is", null)
       .order("due_date", { ascending: true })
       .limit(80),

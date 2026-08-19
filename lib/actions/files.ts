@@ -23,6 +23,7 @@ function revalidateFiles(input?: {
   revalidatePath("/clients");
   revalidatePath("/projects");
   revalidatePath("/tasks");
+  revalidatePath("/bugs");
   revalidatePath("/invoices");
 
   if (input?.clientId) {

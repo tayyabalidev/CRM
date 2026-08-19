@@ -37,12 +37,14 @@ export function TaskBoard({
   timeZone,
   projects,
   assignees,
+  noun = "task",
 }: {
   tasks: TaskListItem[];
   canManage: boolean;
   timeZone: string;
   projects: TaskFormProject[];
   assignees: TaskFormAssignee[];
+  noun?: "task" | "bug";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,6 +52,7 @@ export function TaskBoard({
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const groups = groupTasksByProject(tasks);
   const singleGroup = groups.length === 1 ? groups[0] : null;
+  const plural = noun === "bug" ? "bugs" : "tasks";
 
   function moveTask(taskId: string, status: TaskStatus) {
     const current = tasks.find((task) => task.id === taskId);
@@ -70,12 +73,12 @@ export function TaskBoard({
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
       {singleGroup ? (
-        <TaskProjectHeader group={singleGroup} />
+        <TaskProjectHeader group={singleGroup} noun={noun} />
       ) : (
         <div className="border-b px-4 py-3">
           <p className="font-medium">All projects</p>
           <p className="text-xs text-muted-foreground">
-            {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+            {tasks.length} {tasks.length === 1 ? noun : plural}
           </p>
         </div>
       )}

@@ -12,6 +12,7 @@ import { TaskFormSheet, type TaskFormAssignee, type TaskFormProject } from "@/co
 import { TaskRowActions } from "@/components/tasks/task-row-actions";
 import { StartTimerButton } from "@/components/time/start-timer-button";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TaskDetail } from "@/lib/services/tasks";
 import { formatDate, formatTime } from "@/lib/utils/dates";
@@ -43,6 +44,7 @@ export function TaskDetailView({
     priority: task.priority,
     status: task.status,
     estimatedMinutes: task.estimated_minutes,
+    kind: task.kind,
   };
 
   return (
@@ -51,6 +53,7 @@ export function TaskDetailView({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{task.title}</h1>
+            {task.kind === "bug" ? <Badge variant="secondary">Bug</Badge> : null}
             <StatusBadge value={task.status} />
             <PriorityBadge value={task.priority} />
           </div>
@@ -72,6 +75,8 @@ export function TaskDetailView({
               task={formTask}
               projects={projects}
               assignees={assignees}
+              kind={task.kind}
+              canManage={canManage}
               trigger={<Button variant="outline">Edit</Button>}
             />
             <TaskRowActions task={formTask} projects={projects} assignees={assignees} />

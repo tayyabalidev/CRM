@@ -36,11 +36,13 @@ export function TaskFilterSheet({
   projects,
   assignees,
   hideAssignees = false,
+  listPath = "/tasks",
 }: {
   params: TaskListParams;
   projects: TaskFormProject[];
   assignees: TaskFormAssignee[];
   hideAssignees?: boolean;
+  listPath?: string;
 }) {
   const active = hasTaskSheetFilters(params);
 
@@ -55,7 +57,7 @@ export function TaskFilterSheet({
         </Button>
       </DialogTrigger>
       <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-md">
-        <form action="/tasks">
+        <form action={listPath}>
           <input type="hidden" name="view" value={params.view} />
           <input type="hidden" name="q" value={params.q} />
           {params.hideComplete ? <input type="hidden" name="hide" value="complete" /> : null}
@@ -69,7 +71,7 @@ export function TaskFilterSheet({
               <DialogTitle>Apply filters</DialogTitle>
             </div>
             <Link
-              href={taskListHref(resetTaskSheetFilters(params))}
+              href={taskListHref(resetTaskSheetFilters(params), {}, listPath)}
               className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto px-0")}
             >
               Reset all

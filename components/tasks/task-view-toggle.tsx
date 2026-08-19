@@ -11,7 +11,7 @@ const views: { id: TaskView; label: string; icon: typeof List }[] = [
   { id: "table", label: "Table", icon: Table2 },
 ];
 
-export function TaskViewToggle({ params }: { params: TaskListParams }) {
+export function TaskViewToggle({ params, listPath = "/tasks" }: { params: TaskListParams; listPath?: string }) {
   return (
     <div className="flex rounded-lg border bg-muted/40 p-1">
       {views.map((view) => {
@@ -20,7 +20,7 @@ export function TaskViewToggle({ params }: { params: TaskListParams }) {
         return (
           <Link
             key={view.id}
-            href={taskListHref(params, { view: view.id, page: 1 })}
+            href={taskListHref(params, { view: view.id, page: 1 }, listPath)}
             aria-label={view.label}
             title={view.label}
             className={cn(

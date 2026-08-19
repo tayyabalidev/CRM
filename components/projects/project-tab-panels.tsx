@@ -9,6 +9,7 @@ import {
   Receipt,
   StickyNote,
   Images,
+  Bug,
   Wallet,
 } from "lucide-react";
 
@@ -232,6 +233,41 @@ export function ProjectTabPanels({
             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
             View all tasks
+          </Link>
+        </div>
+      </RelatedSection>
+    );
+  }
+
+  if (tab === "bugs") {
+    return (
+      <RelatedSection
+        title="Bugs"
+        description="Issues reported by clients or staff."
+        emptyTitle="No bugs"
+        emptyDescription="Reported bugs for this project will appear here."
+        icon={<Bug className="size-4" />}
+        isEmpty={detail.bugs.length === 0}
+      >
+        <ul className="divide-y">
+          {detail.bugs.map((task) => (
+            <li key={task.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
+              <Link href={`/tasks/${task.id}`} className="min-w-0 flex-1 truncate text-sm font-medium hover:underline">
+                {task.title}
+              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <PriorityBadge value={task.priority} />
+                <StatusBadge value={task.status} />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="pt-3">
+          <Link
+            href={`/bugs?project=${detail.project.id}`}
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+          >
+            View all bugs
           </Link>
         </div>
       </RelatedSection>

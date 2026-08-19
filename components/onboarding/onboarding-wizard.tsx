@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { FieldError } from "@/components/auth/field-error";
 import { BrandWordmark } from "@/components/layout/brand-mark";
@@ -32,6 +33,7 @@ export function OnboardingWizard({
   defaultTimezone: string;
 }) {
   const timezones = useMemo(() => listTimezones(), []);
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -216,7 +218,11 @@ export function OnboardingWizard({
                     const result = await completeOnboardingAction(values);
                     if (result?.error) {
                       setError(result.error);
+                      return;
                     }
+
+                    router.replace("/");
+                    router.refresh();
                   });
                 }}
               >

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAuthState } from "@/lib/auth/session";
+import { logServerError } from "@/lib/logging/safe-error";
 import { createClient } from "@/lib/supabase/server";
 import { slugifyWorkspaceName } from "@/lib/utils/slug";
 import { onboardingSchema } from "@/lib/validations/onboarding";
@@ -18,34 +19,36 @@ export async function completeOnboardingAction(input: unknown) {
   const state = await requireAuthState();
 
   if (state.workspaces.length > 0) {
-    redirect("/");
+    revalidatePath("/", "layout");
+    return { ok: true as const };
   }
 
   const supabase = await createClient();
-  const { fullName, workspaceName, currency, timezone } = parsed.data;
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  const { error: profileError } = await supabase.from("profiles").upsert({
-    id: state.user.id,
-    full_name: fullName,
-    timezone,
-  });
-
-  if (profileError) {
-    return { error: "Could not save your profile. Try again." };
+  if (authError || !user) {
+    logServerError("onboarding.auth", authError ?? new Error("No user"));
+    redirect("/login");
   }
 
-  const { error: workspaceError } = await supabase.from("workspaces").insert({
-    name: workspaceName,
-    slug: slugifyWorkspaceName(workspaceName),
-    owner_id: state.user.id,
-    currency,
-    timezone,
+  const { fullName, workspaceName, currency, timezone } = parsed.data;
+  const { data: workspaceId, error: onboardingError } = await supabase.rpc("complete_onboarding", {
+    p_full_name: fullName,
+    p_workspace_name: workspaceName,
+    p_workspace_slug: slugifyWorkspaceName(workspaceName),
+    p_currency: currency,
+    p_timezone: timezone,
   });
 
-  if (workspaceError) {
-    return { error: "Could not create your workspace. Try a different name." };
+  if (onboardingError || !workspaceId) {
+    logServerError("onboarding.complete", onboardingError ?? new Error("No workspace id returned"));
+    return { error: "Could not create your workspace. Try again." };
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  revalidatePath("/onboarding");
+  return { ok: true as const };
 }

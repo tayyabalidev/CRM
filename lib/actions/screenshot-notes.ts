@@ -16,6 +16,7 @@ import { isStaffRole } from "@/types/index";
 function revalidateScreenshotNotes(input: { projectId?: string | null; taskId?: string | null }) {
   revalidatePath("/projects");
   revalidatePath("/tasks");
+  revalidatePath("/bugs");
   revalidatePath("/files");
 
   if (input.projectId) {

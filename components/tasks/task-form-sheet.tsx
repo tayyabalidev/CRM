@@ -33,7 +33,7 @@ import {
 import { addTaskAction, updateTaskAction } from "@/lib/actions/tasks";
 import { toDateTimeLocalValue } from "@/lib/utils/dates";
 import { type TaskInput, taskSchema } from "@/lib/validations/task";
-import { priorities, taskStatuses, type Priority, type TaskStatus } from "@/types/index";
+import { priorities, taskStatuses, type Priority, type TaskKind, type TaskStatus } from "@/types/index";
 
 export type TaskFormProject = { id: string; name: string };
 export type TaskFormAssignee = { id: string; name: string };
@@ -48,6 +48,7 @@ export type TaskFormValues = {
   priority: Priority;
   status: TaskStatus;
   estimatedMinutes: number | null;
+  kind?: TaskKind;
 };
 
 function hoursFromMinutes(minutes: number | null | undefined) {
@@ -59,10 +60,15 @@ function hoursFromMinutes(minutes: number | null | undefined) {
   return Number.isInteger(hours) ? String(hours) : String(Math.round(hours * 100) / 100);
 }
 
-function toDefaults(task: TaskFormValues | undefined, defaultProjectId?: string): TaskInput {
+function toDefaults(
+  task: TaskFormValues | undefined,
+  defaultProjectId: string | undefined,
+  kind: TaskKind,
+): TaskInput {
   return {
     title: task?.title ?? "",
     description: task?.description ?? "",
+    kind: task?.kind ?? kind,
     projectId: task?.projectId ?? defaultProjectId ?? "",
     assigneeId: task?.assigneeId ?? "",
     dueDate: toDateTimeLocalValue(task?.dueDate),
@@ -77,6 +83,8 @@ export function TaskFormSheet({
   projects,
   assignees,
   defaultProjectId,
+  kind = "task",
+  canManage = true,
   trigger,
   open,
   onOpenChange,
@@ -85,11 +93,17 @@ export function TaskFormSheet({
   projects: TaskFormProject[];
   assignees: TaskFormAssignee[];
   defaultProjectId?: string;
+  kind?: TaskKind;
+  canManage?: boolean;
   trigger?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
   const isEdit = Boolean(task?.id);
+  const itemKind = task?.kind ?? kind;
+  const isBug = itemKind === "bug";
+  const noun = isBug ? "bug" : "task";
+  const staffFields = canManage;
   const router = useRouter();
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -100,7 +114,7 @@ export function TaskFormSheet({
   const setSheetOpen = onOpenChange ?? setUncontrolledOpen;
   const form = useForm<TaskInput>({
     resolver: zodResolver(taskSchema),
-    defaultValues: toDefaults(task, defaultProjectId),
+    defaultValues: toDefaults(task, defaultProjectId, itemKind),
   });
 
   return (
@@ -109,7 +123,7 @@ export function TaskFormSheet({
       onOpenChange={(next) => {
         setSheetOpen(next);
         if (next) {
-          form.reset(toDefaults(task, defaultProjectId));
+          form.reset(toDefaults(task, defaultProjectId, itemKind));
           setScreenshotDrafts([]);
           setFormError(null);
         }
@@ -118,9 +132,15 @@ export function TaskFormSheet({
       {trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : null}
       <SheetContent className="data-[side=right]:w-full data-[side=right]:sm:max-w-lg" side="right">
         <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit task" : "Add task"}</SheetTitle>
+          <SheetTitle>{isEdit ? `Edit ${noun}` : isBug ? "Report bug" : "Add task"}</SheetTitle>
           <SheetDescription>
-            {isEdit ? "Update details, assignee, and status." : "Create a task and optionally attach it to a project."}
+            {isEdit
+              ? isBug
+                ? "Update the bug details and status."
+                : "Update details, assignee, and status."
+              : isBug
+                ? "Describe what went wrong and attach screenshots if you have them."
+                : "Create a task and optionally attach it to a project."}
           </SheetDescription>
         </SheetHeader>
         <form
@@ -153,14 +173,14 @@ export function TaskFormSheet({
                   }
                 }
 
-                toast.success("Task saved");
+                toast.success(isBug ? "Bug saved" : "Task saved");
                 setSheetOpen(false);
                 return;
               }
 
               const result = await addTaskAction(values);
               if (!result || "error" in result) {
-                setFormError(result?.error ?? "Could not add this task. Try again.");
+                setFormError(result?.error ?? `Could not add this ${noun}. Try again.`);
                 return;
               }
 
@@ -178,12 +198,19 @@ export function TaskFormSheet({
                 }
               }
 
-              toast.success("Task added");
+              toast.success(isBug ? "Bug reported" : "Task added");
               router.push(`/tasks/${result.id}`);
             });
           })}
         >
           <div className="flex-1 space-y-3 overflow-y-auto px-4">
+            <input type="hidden" {...form.register("kind")} />
+            {staffFields ? null : (
+              <>
+                <input type="hidden" {...form.register("assigneeId")} />
+                <input type="hidden" {...form.register("estimatedHours")} />
+              </>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="task-title">Title</Label>
               <Input id="task-title" {...form.register("title")} />
@@ -209,7 +236,7 @@ export function TaskFormSheet({
             <div className="space-y-1.5">
               <Label htmlFor="task-project">Project</Label>
               <Select id="task-project" {...form.register("projectId")}>
-                <option value="">No project</option>
+                {isBug ? <option value="">Select a project</option> : <option value="">No project</option>}
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -218,28 +245,32 @@ export function TaskFormSheet({
               </Select>
               <FieldError message={form.formState.errors.projectId?.message} />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="task-assignee">Assignee</Label>
-              <Select id="task-assignee" {...form.register("assigneeId")}>
-                <option value="">Unassigned</option>
-                {assignees.map((assignee) => (
-                  <option key={assignee.id} value={assignee.id}>
-                    {assignee.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {staffFields ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="task-assignee">Assignee</Label>
+                <Select id="task-assignee" {...form.register("assigneeId")}>
+                  <option value="">Unassigned</option>
+                  {assignees.map((assignee) => (
+                    <option key={assignee.id} value={assignee.id}>
+                      {assignee.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="task-due">Due date</Label>
                 <Input id="task-due" type="datetime-local" {...form.register("dueDate")} />
                 <FieldError message={form.formState.errors.dueDate?.message} />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="task-estimated">Estimated hours</Label>
-                <Input id="task-estimated" inputMode="decimal" {...form.register("estimatedHours")} />
-                <FieldError message={form.formState.errors.estimatedHours?.message} />
-              </div>
+              {staffFields ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-estimated">Estimated hours</Label>
+                  <Input id="task-estimated" inputMode="decimal" {...form.register("estimatedHours")} />
+                  <FieldError message={form.formState.errors.estimatedHours?.message} />
+                </div>
+              ) : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -252,16 +283,20 @@ export function TaskFormSheet({
                   ))}
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="task-status">Status</Label>
-                <Select id="task-status" {...form.register("status")}>
-                  {taskStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {taskStatusLabels[status]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              {staffFields ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-status">Status</Label>
+                  <Select id="task-status" {...form.register("status")}>
+                    {taskStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {taskStatusLabels[status]}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              ) : (
+                <input type="hidden" value="todo" {...form.register("status")} />
+              )}
             </div>
             {formError ? <FieldError message={formError} /> : null}
           </div>
@@ -270,7 +305,7 @@ export function TaskFormSheet({
               Cancel
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving..." : isEdit ? "Save changes" : "Add task"}
+              {pending ? "Saving..." : isEdit ? "Save changes" : isBug ? "Report bug" : "Add task"}
             </Button>
           </SheetFooter>
         </form>
