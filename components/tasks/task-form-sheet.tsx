@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -22,6 +23,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ScreenshotDraftList,
+  collectScreenshotDrafts,
+  saveScreenshotDrafts,
+  type ScreenshotDraft,
+  type ScreenshotDraftListHandle,
+} from "@/components/screenshots/screenshot-draft-list";
 import { addTaskAction, updateTaskAction } from "@/lib/actions/tasks";
 import { toDateTimeLocalValue } from "@/lib/utils/dates";
 import { type TaskInput, taskSchema } from "@/lib/validations/task";
@@ -82,9 +90,12 @@ export function TaskFormSheet({
   onOpenChange?: (open: boolean) => void;
 }) {
   const isEdit = Boolean(task?.id);
+  const router = useRouter();
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [screenshotDrafts, setScreenshotDrafts] = useState<ScreenshotDraft[]>([]);
+  const screenshotListRef = useRef<ScreenshotDraftListHandle>(null);
   const sheetOpen = open ?? uncontrolledOpen;
   const setSheetOpen = onOpenChange ?? setUncontrolledOpen;
   const form = useForm<TaskInput>({
@@ -99,6 +110,7 @@ export function TaskFormSheet({
         setSheetOpen(next);
         if (next) {
           form.reset(toDefaults(task, defaultProjectId));
+          setScreenshotDrafts([]);
           setFormError(null);
         }
       }}
@@ -115,19 +127,59 @@ export function TaskFormSheet({
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={form.handleSubmit((values) => {
             setFormError(null);
-            startTransition(async () => {
-              const result =
-                isEdit && task?.id ? await updateTaskAction(task.id, values) : await addTaskAction(values);
+            const drafts = collectScreenshotDrafts(screenshotDrafts, screenshotListRef.current);
+            if ("error" in drafts) {
+              setFormError(drafts.error);
+              return;
+            }
 
-              if (result?.error) {
-                setFormError(result.error);
+            startTransition(async () => {
+              if (isEdit && task?.id) {
+                const result = await updateTaskAction(task.id, values);
+                if (result?.error) {
+                  setFormError(result.error);
+                  return;
+                }
+
+                if (drafts.length > 0) {
+                  const uploaded = await saveScreenshotDrafts({
+                    drafts,
+                    taskId: task.id,
+                    projectId: values.projectId || task.projectId,
+                  });
+                  if (uploaded.error) {
+                    setFormError(uploaded.error);
+                    return;
+                  }
+                }
+
+                toast.success("Task saved");
+                setSheetOpen(false);
                 return;
               }
 
-              if (isEdit) {
-                toast.success("Task saved");
-                setSheetOpen(false);
+              const result = await addTaskAction(values);
+              if (!result || "error" in result) {
+                setFormError(result?.error ?? "Could not add this task. Try again.");
+                return;
               }
+
+              if (drafts.length > 0) {
+                const uploaded = await saveScreenshotDrafts({
+                  drafts,
+                  taskId: result.id,
+                  projectId: result.projectId,
+                  clientId: result.clientId,
+                });
+                if (uploaded.error) {
+                  setFormError(uploaded.error);
+                  router.push(`/tasks/${result.id}`);
+                  return;
+                }
+              }
+
+              toast.success("Task added");
+              router.push(`/tasks/${result.id}`);
             });
           })}
         >
@@ -141,6 +193,18 @@ export function TaskFormSheet({
               <Label htmlFor="task-description">Description</Label>
               <Textarea id="task-description" rows={4} {...form.register("description")} />
               <FieldError message={form.formState.errors.description?.message} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Screenshots</Label>
+              <p className="text-xs text-muted-foreground">
+                Add a short note and a picture for each change. Stack as many as you need.
+              </p>
+              <ScreenshotDraftList
+                ref={screenshotListRef}
+                items={screenshotDrafts}
+                onChange={setScreenshotDrafts}
+                disabled={pending}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="task-project">Project</Label>

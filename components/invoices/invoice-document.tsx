@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils";
 
 function formatQty(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return Number.isInteger(value) ? String(value) : value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
 function TotalRow({

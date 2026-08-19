@@ -9,7 +9,7 @@ export function toNumber(value: string | number | null | undefined) {
 
 export function formatMoney(amount: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,

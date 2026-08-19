@@ -176,6 +176,7 @@ export async function addPaymentAction(input: unknown) {
     paymentId: data.id,
     amountLabel: formatMoney(Number(amount), currency),
     clientName: targets.client.name,
+    clientId: targets.client.id,
   });
 
   revalidatePayments({

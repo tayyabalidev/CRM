@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspace } from "@/lib/auth/workspace";
+import { logServerError } from "@/lib/logging/safe-error";
 import { canCreateNote, canEditNote } from "@/lib/notes/access";
 import { logActivity } from "@/lib/services/activity";
 import { notifyClientUpdate } from "@/lib/services/notifications";
@@ -14,6 +15,7 @@ import type { NoteVisibility } from "@/types/index";
 
 function revalidateNotes(input?: { clientId?: string | null; projectId?: string | null }) {
   revalidatePath("/notes");
+  revalidatePath("/updates");
   revalidatePath("/clients");
   revalidatePath("/projects");
 
@@ -124,21 +126,20 @@ export async function createNoteAction(input: unknown) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("notes")
-    .insert({
-      workspace_id: workspace.id,
-      client_id: targets.clientId,
-      project_id: targets.projectId,
-      title: parsed.data.title,
-      content: emptyToNull(parsed.data.content),
-      created_by: user.id,
-      visibility: parsed.data.visibility,
-    })
-    .select("id")
-    .maybeSingle();
+  const noteId = crypto.randomUUID();
+  const { error } = await supabase.from("notes").insert({
+    id: noteId,
+    workspace_id: workspace.id,
+    client_id: targets.clientId,
+    project_id: targets.projectId,
+    title: parsed.data.title,
+    content: emptyToNull(parsed.data.content),
+    created_by: user.id,
+    visibility: parsed.data.visibility,
+  });
 
-  if (error || !data) {
+  if (error) {
+    logServerError("notes.create", error);
     return { error: "Could not save this note. Try again." };
   }
 
@@ -146,19 +147,23 @@ export async function createNoteAction(input: unknown) {
     workspaceId: workspace.id,
     userId: user.id,
     entityType: "note",
-    entityId: data.id,
+    entityId: noteId,
     action: "created",
     message: `added note “${parsed.data.title}”.`,
   });
 
   if (parsed.data.visibility === "client" && targets.clientId && workspace.role !== "client") {
-    await notifyClientUpdate(supabase, {
-      workspaceId: workspace.id,
-      clientId: targets.clientId,
-      actorId: user.id,
-      noteId: data.id,
-      title: parsed.data.title,
-    });
+    try {
+      await notifyClientUpdate(supabase, {
+        workspaceId: workspace.id,
+        clientId: targets.clientId,
+        actorId: user.id,
+        noteId,
+        title: parsed.data.title,
+      });
+    } catch (notifyError) {
+      logServerError("notes.notify_client_update", notifyError);
+    }
   }
 
   revalidateNotes(targets);
@@ -205,6 +210,7 @@ export async function updateNoteAction(noteId: string, input: unknown) {
     .eq("workspace_id", workspace.id);
 
   if (error) {
+    logServerError("notes.update", error);
     return { error: "Could not save this note. Try again." };
   }
 

@@ -369,6 +369,85 @@ export type Database = {
           },
         ];
       };
+      screenshot_notes: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          client_id: string | null;
+          project_id: string | null;
+          task_id: string | null;
+          file_id: string;
+          created_by: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          client_id?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          file_id: string;
+          created_by: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          client_id?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          file_id?: string;
+          created_by?: string;
+          message?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "screenshot_notes_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "screenshot_notes_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "screenshot_notes_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "screenshot_notes_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "screenshot_notes_file_id_fkey";
+            columns: ["file_id"];
+            isOneToOne: false;
+            referencedRelation: "files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "screenshot_notes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notifications: {
         Row: {
           id: string;

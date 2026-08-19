@@ -206,6 +206,7 @@ You do **not** need a paid Vercel plan for this app.
 - [ ] Password reset email link lands on `/reset-password`
 - [ ] Create a client, project, task, invoice, and payment
 - [ ] Upload a file under Files
+- [ ] Add a screenshot note on a project and a task
 - [ ] Open an invoice PDF / print view
 - [ ] (Optional) Invite a client portal user and confirm they only see their data
 

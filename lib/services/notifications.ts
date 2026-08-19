@@ -12,7 +12,15 @@ export type NotificationType =
   | "invoice_overdue"
   | "payment_recorded"
   | "project_deadline"
-  | "client_update";
+  | "client_update"
+  | "project_created"
+  | "project_updated"
+  | "task_created"
+  | "task_completed"
+  | "file_uploaded"
+  | "invoice_sent"
+  | "task_comment"
+  | "screenshot_note";
 
 export type NotificationItem = {
   id: string;
@@ -62,14 +70,13 @@ async function listClientRecipients(
 ) {
   const { data } = await supabase
     .from("workspace_members")
-    .select("user_id, profiles ( notify_in_app )")
+    .select("user_id")
     .eq("workspace_id", workspaceId)
     .eq("role", "client")
     .eq("client_id", clientId);
 
   return (data ?? [])
     .filter((member) => member.user_id !== options?.excludeUserId)
-    .filter((member) => relatedNotifyFlag(member.profiles))
     .map((member) => member.user_id);
 }
 
@@ -217,26 +224,116 @@ export async function notifyPaymentRecorded(
     paymentId: string;
     amountLabel: string;
     clientName: string;
+    clientId?: string | null;
   },
 ) {
   const recipients = await listStaffRecipients(supabase, input.workspaceId, {
     excludeUserId: input.actorId,
   });
 
-  if (recipients.length === 0) {
-    return;
+  if (recipients.length > 0) {
+    await notifyUsers(supabase, {
+      workspaceId: input.workspaceId,
+      userIds: recipients,
+      title: "Payment recorded",
+      message: `${input.amountLabel} was recorded for ${input.clientName}.`,
+      type: "payment_recorded",
+      link: "/payments",
+      entityType: "payment",
+      entityId: input.paymentId,
+    });
   }
 
-  await notifyUsers(supabase, {
+  await notifyClientPortalUsers(supabase, {
     workspaceId: input.workspaceId,
-    userIds: recipients,
+    clientId: input.clientId,
+    actorId: input.actorId,
     title: "Payment recorded",
-    message: `${input.amountLabel} was recorded for ${input.clientName}.`,
+    message: `${input.amountLabel} was recorded on your account.`,
     type: "payment_recorded",
     link: "/payments",
     entityType: "payment",
     entityId: input.paymentId,
   });
+}
+
+export async function notifyClientPortalUsers(
+  supabase: SupabaseClient<Database>,
+  input: {
+    workspaceId: string;
+    clientId?: string | null;
+    actorId: string;
+    title: string;
+    message: string;
+    type?: NotificationType;
+    link?: string | null;
+    entityType?: string | null;
+    entityId?: string | null;
+  },
+) {
+  if (!input.clientId) {
+    return;
+  }
+
+  try {
+    const recipients = await listClientRecipients(supabase, input.workspaceId, input.clientId, {
+      excludeUserId: input.actorId,
+    });
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    await notifyUsers(supabase, {
+      workspaceId: input.workspaceId,
+      userIds: recipients,
+      title: input.title,
+      message: input.message,
+      type: input.type ?? "client_update",
+      link: input.link,
+      entityType: input.entityType,
+      entityId: input.entityId,
+    });
+  } catch {
+    // Client notifications must not block the staff action.
+  }
+}
+
+export async function notifyWorkspaceStaff(
+  supabase: SupabaseClient<Database>,
+  input: {
+    workspaceId: string;
+    actorId: string;
+    title: string;
+    message: string;
+    type?: NotificationType;
+    link?: string | null;
+    entityType?: string | null;
+    entityId?: string | null;
+  },
+) {
+  try {
+    const recipients = await listStaffRecipients(supabase, input.workspaceId, {
+      excludeUserId: input.actorId,
+    });
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    await notifyUsers(supabase, {
+      workspaceId: input.workspaceId,
+      userIds: recipients,
+      title: input.title,
+      message: input.message,
+      type: input.type ?? "screenshot_note",
+      link: input.link,
+      entityType: input.entityType,
+      entityId: input.entityId,
+    });
+  } catch {
+    // Staff notifications must not block the client action.
+  }
 }
 
 export async function notifyClientUpdate(
@@ -249,17 +346,10 @@ export async function notifyClientUpdate(
     title: string;
   },
 ) {
-  const recipients = await listClientRecipients(supabase, input.workspaceId, input.clientId, {
-    excludeUserId: input.actorId,
-  });
-
-  if (recipients.length === 0) {
-    return;
-  }
-
-  await notifyUsers(supabase, {
+  await notifyClientPortalUsers(supabase, {
     workspaceId: input.workspaceId,
-    userIds: recipients,
+    clientId: input.clientId,
+    actorId: input.actorId,
     title: "New client update",
     message: input.title,
     type: "client_update",

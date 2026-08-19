@@ -18,7 +18,7 @@ export default async function TaskDetailPage({
     notFound();
   }
 
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
   const canManage = isStaffRole(workspace.role);
   const detail = await getTaskDetail(workspace.id, id);
 
@@ -38,6 +38,7 @@ export default async function TaskDetailPage({
       canManage={canManage}
       projects={projects}
       assignees={assignees}
+      userId={user.id}
     />
   );
 }

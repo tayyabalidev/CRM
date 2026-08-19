@@ -7,6 +7,7 @@ import { requireWorkspace } from "@/lib/auth/workspace";
 import { invoiceTotals, lineTotal, remainingBalance } from "@/lib/invoices/totals";
 import { logActivity, logInvoicePaidIfNeeded } from "@/lib/services/activity";
 import { nextWorkspaceInvoiceNumber } from "@/lib/services/invoices";
+import { notifyClientPortalUsers } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { addCalendarDays, zonedDateKey } from "@/lib/utils/dates";
 import { isUuid } from "@/lib/utils/ids";
@@ -411,6 +412,17 @@ export async function markInvoiceSentAction(invoiceId: string) {
     entityId: invoiceId,
     action: "sent",
     message: `marked invoice ${existing.invoice_number} as sent.`,
+  });
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: existing.client_id,
+    actorId: user.id,
+    title: "New invoice",
+    message: `${existing.invoice_number} is ready to view.`,
+    type: "invoice_sent",
+    link: `/invoices/${invoiceId}`,
+    entityType: "invoice",
+    entityId: invoiceId,
   });
   await logInvoicePaidIfNeeded(supabase, {
     workspaceId: workspace.id,

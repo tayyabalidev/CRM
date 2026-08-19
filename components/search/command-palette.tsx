@@ -62,7 +62,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key.toLowerCase() !== "k") {
+      if ((event.key ?? "").toLowerCase() !== "k") {
         return;
       }
 

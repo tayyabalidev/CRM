@@ -49,6 +49,28 @@ export const FILE_ACCEPT = [
   ...Object.values(ALLOWED_FILE_TYPES).flat(),
 ].join(",");
 
+export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+
+export const IMAGE_ACCEPT = [...IMAGE_MIME_TYPES, ".jpg", ".jpeg", ".png", ".gif", ".webp"].join(",");
+
+export function isImageMime(mimeType: string | null | undefined) {
+  return Boolean(mimeType && IMAGE_MIME_TYPES.includes(mimeType as (typeof IMAGE_MIME_TYPES)[number]));
+}
+
+export function validateImageUpload(file: { name: string; size: number; type: string }) {
+  const validationError = validateUploadFile(file);
+
+  if (validationError) {
+    return validationError;
+  }
+
+  if (!isImageMime(mimeFromFile(file))) {
+    return "Use a screenshot image (JPEG, PNG, GIF, or WebP).";
+  }
+
+  return null;
+}
+
 export function mimeFromFile(file: { name: string; type: string }) {
   if (file.type && ALLOWED_FILE_TYPES[file.type]) {
     return file.type;

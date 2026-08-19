@@ -78,6 +78,8 @@ export function rangeLabel(range: DashboardRange) {
   }
 }
 
+const DISPLAY_LOCALE = "en-US";
+
 function parseDateValue(value: string | Date) {
   if (value instanceof Date) {
     return value;
@@ -91,7 +93,7 @@ function parseDateValue(value: string | Date) {
 }
 
 export function formatDate(value: string | Date, timeZone = "UTC") {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
     timeZone,
     month: "short",
     day: "numeric",
@@ -102,10 +104,11 @@ export function formatDate(value: string | Date, timeZone = "UTC") {
 export function formatTime(value: string | Date, timeZone = "UTC") {
   const date = typeof value === "string" ? new Date(value) : value;
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
+    hour12: true,
   }).format(date);
 }
 
@@ -114,7 +117,7 @@ export function formatDateTime(value: string | Date, timeZone = "UTC") {
 }
 
 export function formatDayLabel(value: string | Date, timeZone = "UTC") {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
     timeZone,
     month: "short",
     day: "numeric",
@@ -122,7 +125,7 @@ export function formatDayLabel(value: string | Date, timeZone = "UTC") {
 }
 
 export function formatMonthLabel(value: string | Date, timeZone = "UTC") {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
     timeZone,
     month: "short",
     year: "2-digit",

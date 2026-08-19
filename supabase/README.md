@@ -17,7 +17,9 @@ For the full local + Vercel setup (env vars, Auth URLs, custom domain), see the 
 9. Paste and run `migrations/0007_security_hardening.sql` (storage tenant isolation, membership role guards, invite atomicity, related-row workspace checks).
 10. Paste and run `migrations/0008_perf_indexes.sql` (list/report indexes for invoices, files, time entries, tasks, projects, notifications).
 11. Paste and run `migrations/0009_client_uploads.sql` (client-scoped file uploads and storage insert policy updates).
-12. Copy the project URL and anon key into `.env.local` (and Vercel env for deploy).
+12. Paste and run `migrations/0010_notes_trigger_fix.sql` (fixes note create/update trigger accessing missing invoice_id).
+13. Paste and run `migrations/0011_screenshot_notes.sql` (project and task screenshot notes with images).
+14. Copy the project URL and anon key into `.env.local` (and Vercel env for deploy).
 
 If `0001` failed with “type already exists”, run the updated `0001_schema.sql` again, then `0002_rls.sql`.
 

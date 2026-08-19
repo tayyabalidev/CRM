@@ -1,5 +1,6 @@
 import { PROJECT_BOARD_LIMIT, PROJECT_PAGE_SIZE, type ProjectListParams } from "@/lib/projects/params";
 import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
+import { listProjectScreenshotNotes, type ScreenshotNoteItem } from "@/lib/services/screenshot-notes";
 import { createClient } from "@/lib/supabase/server";
 import { throwUserError } from "@/lib/logging/safe-error";
 import { entrySeconds } from "@/lib/services/time";
@@ -117,6 +118,7 @@ export type ProjectDetail = {
   invoices: ProjectInvoice[];
   files: ProjectFile[];
   notes: ProjectNote[];
+  screenshotNotes: ScreenshotNoteItem[];
   activity: ProjectActivity[];
 };
 
@@ -256,6 +258,7 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
     taskCompletedResult,
     assigneesResult,
     allTimeResult,
+    screenshotNotes,
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -339,6 +342,7 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
       .select("duration_seconds, started_at, ended_at")
       .eq("workspace_id", workspaceId)
       .eq("project_id", projectId),
+    listProjectScreenshotNotes(workspaceId, projectId),
   ]);
 
   const tasks = tasksResult.data ?? [];
@@ -435,6 +439,7 @@ export async function getProjectDetail(workspaceId: string, projectId: string): 
       createdBy: note.created_by,
       clientId: note.client_id,
     })),
+    screenshotNotes,
     activity: (activityResult.data ?? []).map(mapActivityRow),
   };
 }

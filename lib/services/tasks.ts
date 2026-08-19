@@ -1,5 +1,6 @@
 import { TASK_BOARD_LIMIT, TASK_PAGE_SIZE, type TaskListParams } from "@/lib/tasks/params";
 import { mapActivityRow, type ActivityItem } from "@/lib/services/activity";
+import { listTaskScreenshotNotes, type ScreenshotNoteItem } from "@/lib/services/screenshot-notes";
 import { createClient } from "@/lib/supabase/server";
 import { throwUserError } from "@/lib/logging/safe-error";
 import { entrySeconds } from "@/lib/services/time";
@@ -65,6 +66,7 @@ export type TaskDetail = {
   trackedSeconds: number;
   comments: TaskComment[];
   files: TaskFile[];
+  screenshotNotes: ScreenshotNoteItem[];
   activity: TaskActivity[];
 };
 
@@ -210,7 +212,7 @@ export async function getTaskDetail(workspaceId: string, taskId: string): Promis
     return null;
   }
 
-  const [commentsResult, filesResult, activityResult, timeResult] = await Promise.all([
+  const [commentsResult, filesResult, activityResult, timeResult, screenshotNotes] = await Promise.all([
     supabase
       .from("task_comments")
       .select("id, content, created_at, user_id, profiles ( full_name, avatar_url )")
@@ -236,6 +238,7 @@ export async function getTaskDetail(workspaceId: string, taskId: string): Promis
       .select("duration_seconds, started_at, ended_at")
       .eq("workspace_id", workspaceId)
       .eq("task_id", taskId),
+    listTaskScreenshotNotes(workspaceId, taskId),
   ]);
 
   const trackedSeconds = (timeResult.data ?? []).reduce((sum, entry) => sum + entrySeconds(entry), 0);
@@ -286,6 +289,7 @@ export async function getTaskDetail(workspaceId: string, taskId: string): Promis
       mimeType: file.mime_type,
       createdAt: file.created_at,
     })),
+    screenshotNotes,
     activity: (activityResult.data ?? []).map(mapActivityRow),
   };
 }

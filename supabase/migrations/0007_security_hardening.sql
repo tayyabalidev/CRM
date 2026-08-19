@@ -180,51 +180,47 @@ create trigger workspaces_protect_owner_id
 create or replace function public.assert_related_workspace()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
 as $$
 declare
   related_workspace uuid;
+  payload jsonb := to_jsonb(new);
 begin
-  if tg_table_name in ('projects', 'invoices', 'payments', 'files', 'notes')
-     and new.client_id is not null
-  then
+  if payload ? 'client_id' and payload->>'client_id' is not null then
     select workspace_id into related_workspace
     from public.clients
-    where id = new.client_id;
+    where id = (payload->>'client_id')::uuid;
 
     if related_workspace is distinct from new.workspace_id then
       raise exception 'client_id must belong to the same workspace';
     end if;
   end if;
 
-  if tg_table_name in ('payments', 'files', 'notes', 'invoices')
-     and new.project_id is not null
-  then
+  if payload ? 'project_id' and payload->>'project_id' is not null then
     select workspace_id into related_workspace
     from public.projects
-    where id = new.project_id;
+    where id = (payload->>'project_id')::uuid;
 
     if related_workspace is distinct from new.workspace_id then
       raise exception 'project_id must belong to the same workspace';
     end if;
   end if;
 
-  if tg_table_name in ('payments', 'files')
-     and new.invoice_id is not null
-  then
+  if payload ? 'invoice_id' and payload->>'invoice_id' is not null then
     select workspace_id into related_workspace
     from public.invoices
-    where id = new.invoice_id;
+    where id = (payload->>'invoice_id')::uuid;
 
     if related_workspace is distinct from new.workspace_id then
       raise exception 'invoice_id must belong to the same workspace';
     end if;
   end if;
 
-  if tg_table_name = 'files' and new.task_id is not null then
+  if payload ? 'task_id' and payload->>'task_id' is not null then
     select workspace_id into related_workspace
     from public.tasks
-    where id = new.task_id;
+    where id = (payload->>'task_id')::uuid;
 
     if related_workspace is distinct from new.workspace_id then
       raise exception 'task_id must belong to the same workspace';

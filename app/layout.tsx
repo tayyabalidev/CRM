@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-      <body className="min-h-svh antialiased">
+      <body className="min-h-svh antialiased" suppressHydrationWarning>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { logActivity } from "@/lib/services/activity";
+import { notifyClientPortalUsers } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
 import { emptyToNull } from "@/lib/utils/text";
@@ -96,8 +97,20 @@ export async function addProjectAction(input: unknown) {
     message: `created project “${data.name}”.`,
   });
 
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: data.client_id,
+    actorId: user.id,
+    title: "New project",
+    message: `“${data.name}” was added to your workspace.`,
+    type: "project_created",
+    link: `/projects/${data.id}`,
+    entityType: "project",
+    entityId: data.id,
+  });
+
   revalidateProjects(data.id, data.client_id);
-  redirect(`/projects/${data.id}`);
+  return { id: data.id, clientId: data.client_id };
 }
 
 export async function updateProjectAction(projectId: string, input: unknown) {
@@ -154,6 +167,20 @@ export async function updateProjectAction(projectId: string, input: unknown) {
     message: completed
       ? `marked project “${data.name}” as completed.`
       : `updated project “${data.name}”.`,
+  });
+
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: data.client_id,
+    actorId: user.id,
+    title: completed ? "Project completed" : "Project updated",
+    message: completed
+      ? `“${data.name}” was marked as completed.`
+      : `“${data.name}” was updated.`,
+    type: "project_updated",
+    link: `/projects/${data.id}`,
+    entityType: "project",
+    entityId: data.id,
   });
 
   revalidateProjects(data.id, data.client_id);

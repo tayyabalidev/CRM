@@ -6,6 +6,7 @@ import { RelatedSection } from "@/components/clients/related-section";
 import { FileAttachmentList } from "@/components/files/file-attachment-list";
 import { FileUploadSheet } from "@/components/files/file-upload-sheet";
 import { PriorityBadge, StatusBadge } from "@/components/dashboard/status-badge";
+import { ScreenshotNotesPanel } from "@/components/screenshots/screenshot-notes-panel";
 import { TaskComments } from "@/components/tasks/task-comments";
 import { TaskFormSheet, type TaskFormAssignee, type TaskFormProject } from "@/components/tasks/task-form-sheet";
 import { TaskRowActions } from "@/components/tasks/task-row-actions";
@@ -22,12 +23,14 @@ export function TaskDetailView({
   canManage,
   projects,
   assignees,
+  userId,
 }: {
   detail: TaskDetail;
   timeZone: string;
   canManage: boolean;
   projects: TaskFormProject[];
   assignees: TaskFormAssignee[];
+  userId: string;
 }) {
   const { task } = detail;
   const formTask = {
@@ -140,6 +143,25 @@ export function TaskDetailView({
         </Card>
         ) : null}
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Screenshots</CardTitle>
+          <CardDescription>A list of notes with screenshots attached — add one picture and a short message at a time.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScreenshotNotesPanel
+            workspaceId={task.workspace_id}
+            userId={userId}
+            timeZone={timeZone}
+            items={detail.screenshotNotes}
+            clientId={task.client_id}
+            projectId={task.project_id}
+            taskId={task.id}
+            canManage={canManage}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

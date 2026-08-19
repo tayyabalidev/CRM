@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { logActivity } from "@/lib/services/activity";
+import { notifyClientPortalUsers } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/utils/ids";
 import { FILE_BUCKET, sanitizeFileName, validateUploadFile } from "@/lib/utils/files";
@@ -206,6 +207,20 @@ export async function createFileRecordAction(input: unknown) {
     action: "uploaded",
     message: `uploaded “${sanitizeFileName(parsed.data.fileName)}”.`,
   });
+
+  if (isStaff) {
+    await notifyClientPortalUsers(supabase, {
+      workspaceId: workspace.id,
+      clientId: targets.clientId,
+      actorId: user.id,
+      title: "New file",
+      message: `“${sanitizeFileName(parsed.data.fileName)}” was uploaded.`,
+      type: "file_uploaded",
+      link: "/files",
+      entityType: "file",
+      entityId: parsed.data.id,
+    });
+  }
 
   revalidateFiles(targets);
   return {};

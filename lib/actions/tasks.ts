@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { logActivity } from "@/lib/services/activity";
-import { notifyTaskAssigned } from "@/lib/services/notifications";
+import { notifyClientPortalUsers, notifyTaskAssigned } from "@/lib/services/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isTaskStatus } from "@/lib/tasks/params";
 import { fromDateTimeLocalValue } from "@/lib/utils/dates";
@@ -121,8 +121,20 @@ export async function addTaskAction(input: unknown) {
     });
   }
 
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: data.client_id,
+    actorId: user.id,
+    title: "New task",
+    message: `“${data.title}” was added.`,
+    type: "task_created",
+    link: `/tasks/${data.id}`,
+    entityType: "task",
+    entityId: data.id,
+  });
+
   revalidateTasks(data.id, data.project_id, data.client_id);
-  redirect(`/tasks/${data.id}`);
+  return { id: data.id, projectId: data.project_id, clientId: data.client_id };
 }
 
 export async function updateTaskAction(taskId: string, input: unknown) {
@@ -199,6 +211,18 @@ export async function updateTaskAction(taskId: string, input: unknown) {
     });
   }
 
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: data.client_id,
+    actorId: user.id,
+    title: completed ? "Task completed" : "Task updated",
+    message: completed ? `“${data.title}” was marked as completed.` : `“${data.title}” was updated.`,
+    type: completed ? "task_completed" : "client_update",
+    link: `/tasks/${data.id}`,
+    entityType: "task",
+    entityId: data.id,
+  });
+
   revalidateTasks(data.id, data.project_id, data.client_id);
   return { error: null };
 }
@@ -249,6 +273,18 @@ export async function updateTaskStatusAction(taskId: string, status: string) {
     message: `marked “${existing.title}” as ${status.replaceAll("_", " ")}.`,
   });
 
+  await notifyClientPortalUsers(supabase, {
+    workspaceId: workspace.id,
+    clientId: existing.client_id,
+    actorId: user.id,
+    title: completed ? "Task completed" : "Task updated",
+    message: `“${existing.title}” is now ${status.replaceAll("_", " ")}.`,
+    type: completed ? "task_completed" : "client_update",
+    link: `/tasks/${existing.id}`,
+    entityType: "task",
+    entityId: existing.id,
+  });
+
   revalidateTasks(existing.id, existing.project_id, existing.client_id);
   return { error: null };
 }
@@ -296,6 +332,18 @@ export async function addTaskCommentAction(taskId: string, input: unknown) {
       entityId: task.id,
       action: "commented",
       message: `commented on “${task.title}”.`,
+    });
+
+    await notifyClientPortalUsers(supabase, {
+      workspaceId: workspace.id,
+      clientId: task.client_id,
+      actorId: user.id,
+      title: "New comment",
+      message: `A comment was added on “${task.title}”.`,
+      type: "task_comment",
+      link: `/tasks/${task.id}`,
+      entityType: "task",
+      entityId: task.id,
     });
   }
 

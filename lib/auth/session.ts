@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isStaleRefreshError } from "@/lib/supabase/stale-session";
 import type { Tables } from "@/types/database";
 
 export type AuthWorkspace = Pick<
@@ -30,7 +31,17 @@ export const getAuthState = cache(async (): Promise<AuthState | null> => {
   const supabase = await createClient();
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  if (error && isStaleRefreshError(error)) {
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // Cookie clear may fail in a Server Component; proxy handles the rest.
+    }
+    return null;
+  }
 
   if (!user) {
     return null;

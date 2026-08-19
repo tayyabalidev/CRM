@@ -29,7 +29,7 @@ export function remainingBalance(total: number, amountPaid: number) {
 
 export function formatInvoiceMoney(amount: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: 2,

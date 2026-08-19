@@ -8,6 +8,7 @@ import {
   Paperclip,
   Receipt,
   StickyNote,
+  Images,
   Wallet,
 } from "lucide-react";
 
@@ -17,6 +18,7 @@ import { FileAttachmentList } from "@/components/files/file-attachment-list";
 import { FileUploadSheet } from "@/components/files/file-upload-sheet";
 import { NoteFormSheet } from "@/components/notes/note-form-sheet";
 import { NoteRelatedList } from "@/components/notes/note-related-list";
+import { ScreenshotNotesPanel } from "@/components/screenshots/screenshot-notes-panel";
 import { ProgressBar } from "@/components/dashboard/progress-bar";
 import { PriorityBadge, StatusBadge } from "@/components/dashboard/status-badge";
 import type { ProjectTab } from "@/components/projects/project-tabs";
@@ -361,6 +363,29 @@ export function ProjectTabPanels({
             View all files
           </Link>
         </p>
+      </RelatedSection>
+    );
+  }
+
+  if (tab === "screenshots") {
+    return (
+      <RelatedSection
+        title="Screenshots"
+        description="A list of notes with screenshots attached — add one picture and a short message at a time."
+        emptyTitle="No screenshots"
+        emptyDescription="Add a short note and attach a screenshot of the issue or change."
+        icon={<Images className="size-4" />}
+        isEmpty={false}
+      >
+        <ScreenshotNotesPanel
+          workspaceId={project.workspace_id}
+          userId={userId}
+          timeZone={timeZone}
+          items={detail.screenshotNotes}
+          clientId={project.client_id}
+          projectId={project.id}
+          canManage={canManage}
+        />
       </RelatedSection>
     );
   }
