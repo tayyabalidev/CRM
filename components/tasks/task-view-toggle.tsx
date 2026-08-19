@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { Columns3, List } from "lucide-react";
+import { Columns3, List, Table2 } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { taskListHref, type TaskListParams, type TaskView } from "@/lib/tasks/params";
 import { cn } from "@/lib/utils";
 
 const views: { id: TaskView; label: string; icon: typeof List }[] = [
-  { id: "list", label: "List", icon: List },
   { id: "board", label: "Board", icon: Columns3 },
+  { id: "list", label: "List", icon: List },
+  { id: "table", label: "Table", icon: Table2 },
 ];
 
 export function TaskViewToggle({ params }: { params: TaskListParams }) {
@@ -21,13 +22,12 @@ export function TaskViewToggle({ params }: { params: TaskListParams }) {
             key={view.id}
             href={taskListHref(params, { view: view.id, page: 1 })}
             aria-label={view.label}
+            title={view.label}
             className={cn(
-              buttonVariants({ variant: params.view === view.id ? "default" : "ghost", size: "xs" }),
-              "gap-1.5",
+              buttonVariants({ variant: params.view === view.id ? "default" : "ghost", size: "icon-xs" }),
             )}
           >
             <Icon />
-            <span className="hidden sm:inline">{view.label}</span>
           </Link>
         );
       })}

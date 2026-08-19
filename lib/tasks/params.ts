@@ -4,7 +4,7 @@ import { priorities, taskStatuses, type Priority, type TaskStatus } from "@/type
 export const TASK_PAGE_SIZE = 20;
 export const TASK_BOARD_LIMIT = 100;
 
-export const taskViews = ["list", "board"] as const;
+export const taskViews = ["list", "table", "board"] as const;
 export const taskSorts = ["due_date", "created_at", "title", "priority", "status"] as const;
 export const taskStatusFilters = ["all", ...taskStatuses] as const;
 export const taskPriorityFilters = ["all", ...priorities] as const;
@@ -27,6 +27,23 @@ export type TaskListParams = {
   dir: "asc" | "desc";
   page: number;
   view: TaskView;
+  hideComplete: boolean;
+};
+
+export const taskSortLabels: Record<TaskSort, string> = {
+  due_date: "Due date",
+  created_at: "Created",
+  title: "Title",
+  priority: "Priority",
+  status: "Status",
+};
+
+export const taskDueLabels: Record<TaskDueFilter, string> = {
+  all: "Any due date",
+  overdue: "Overdue",
+  today: "Due today",
+  upcoming: "Upcoming",
+  none: "No due date",
 };
 
 export function parseTaskListParams(searchParams: {
@@ -40,6 +57,7 @@ export function parseTaskListParams(searchParams: {
   dir?: string;
   page?: string;
   view?: string;
+  hide?: string;
 }): TaskListParams {
   const page = Number.parseInt(searchParams.page ?? "1", 10);
 
@@ -52,9 +70,10 @@ export function parseTaskListParams(searchParams: {
       ? (searchParams.priority as TaskPriorityFilter)
       : "all",
     projectId: searchParams.project && isUuid(searchParams.project) ? searchParams.project : "",
-    assigneeId: searchParams.assignee === "unassigned" || (searchParams.assignee && isUuid(searchParams.assignee))
-      ? searchParams.assignee
-      : "",
+    assigneeId:
+      searchParams.assignee === "unassigned" || (searchParams.assignee && isUuid(searchParams.assignee))
+        ? searchParams.assignee
+        : "",
     due: taskDueFilters.includes(searchParams.due as TaskDueFilter)
       ? (searchParams.due as TaskDueFilter)
       : "all",
@@ -62,6 +81,7 @@ export function parseTaskListParams(searchParams: {
     dir: searchParams.dir === "desc" ? "desc" : "asc",
     page: Number.isFinite(page) && page > 0 ? page : 1,
     view: taskViews.includes(searchParams.view as TaskView) ? (searchParams.view as TaskView) : "list",
+    hideComplete: searchParams.hide === "complete",
   };
 }
 
@@ -105,12 +125,54 @@ export function taskListHref(current: TaskListParams, patch: Partial<TaskListPar
     params.set("view", next.view);
   }
 
+  if (next.hideComplete) {
+    params.set("hide", "complete");
+  }
+
   if (next.view !== "board" && next.page > 1) {
     params.set("page", String(next.page));
   }
 
   const query = params.toString();
   return query ? `/tasks?${query}` : "/tasks";
+}
+
+export function hasTaskFilters(params: TaskListParams) {
+  return (
+    Boolean(params.q) ||
+    params.status !== "all" ||
+    params.priority !== "all" ||
+    Boolean(params.projectId) ||
+    Boolean(params.assigneeId) ||
+    params.due !== "all" ||
+    params.hideComplete
+  );
+}
+
+export function hasTaskSheetFilters(params: TaskListParams) {
+  return (
+    params.status !== "all" ||
+    params.priority !== "all" ||
+    Boolean(params.projectId) ||
+    Boolean(params.assigneeId) ||
+    params.due !== "all" ||
+    params.sort !== "due_date" ||
+    params.dir !== "asc"
+  );
+}
+
+export function resetTaskSheetFilters(current: TaskListParams): TaskListParams {
+  return {
+    ...current,
+    status: "all",
+    priority: "all",
+    projectId: "",
+    assigneeId: "",
+    due: "all",
+    sort: "due_date",
+    dir: "asc",
+    page: 1,
+  };
 }
 
 export function isTaskStatus(value: string): value is TaskStatus {

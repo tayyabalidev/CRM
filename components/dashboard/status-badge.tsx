@@ -1,29 +1,13 @@
 import { Badge } from "@/components/ui/badge";
+import {
+  priorityLabels,
+  projectStatusLabels,
+  taskStatusLabels,
+} from "@/lib/constants/status-labels";
 import { cn } from "@/lib/utils";
 import type { Priority, ProjectStatus, TaskStatus } from "@/types/index";
 
-export const projectStatusLabels: Record<ProjectStatus, string> = {
-  planning: "Planning",
-  active: "Active",
-  on_hold: "On hold",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
-export const taskStatusLabels: Record<TaskStatus, string> = {
-  backlog: "Backlog",
-  todo: "To do",
-  in_progress: "In progress",
-  review: "Review",
-  completed: "Completed",
-};
-
-export const priorityLabels: Record<Priority, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  urgent: "Urgent",
-};
+export { priorityLabels, projectStatusLabels, taskStatusLabels };
 
 export function StatusBadge({
   value,
@@ -33,7 +17,7 @@ export function StatusBadge({
   const label =
     value in projectStatusLabels
       ? projectStatusLabels[value as ProjectStatus]
-      : taskStatusLabels[value as TaskStatus];
+      : (taskStatusLabels[value as TaskStatus] ?? value);
   const muted = value === "completed" || value === "cancelled" || value === "backlog";
 
   return (

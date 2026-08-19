@@ -6,7 +6,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ProgressBar } from "@/components/dashboard/progress-bar";
-import { PriorityBadge, projectStatusLabels } from "@/components/dashboard/status-badge";
+import { PriorityBadge } from "@/components/dashboard/status-badge";
+import { projectStatusLabels } from "@/lib/constants/status-labels";
 import { Select } from "@/components/ui/select";
 import { updateProjectStatusAction } from "@/lib/actions/projects";
 import type { ProjectListItem } from "@/lib/services/projects";

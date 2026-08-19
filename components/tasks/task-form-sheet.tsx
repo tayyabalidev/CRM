@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { FieldError } from "@/components/auth/field-error";
-import { priorityLabels, taskStatusLabels } from "@/components/dashboard/status-badge";
+import { priorityLabels, taskStatusLabels } from "@/lib/constants/status-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

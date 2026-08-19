@@ -154,6 +154,10 @@ export function isSameZonedDay(value: string | Date, timeZone: string, now = new
   return zonedDateKey(value, timeZone) === zonedDateKey(now, timeZone);
 }
 
+export function isOverdue(value: string | Date, timeZone: string, now = new Date()) {
+  return zonedDateKey(value, timeZone) < zonedDateKey(now, timeZone);
+}
+
 export function toDateTimeLocalValue(value: string | Date | null | undefined) {
   if (!value) {
     return "";

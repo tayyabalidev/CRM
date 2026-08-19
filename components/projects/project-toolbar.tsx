@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { priorityLabels, projectStatusLabels } from "@/components/dashboard/status-badge";
+import { priorityLabels, projectStatusLabels } from "@/lib/constants/status-labels";
 import type { ProjectFormClient } from "@/components/projects/project-form-sheet";
 import {
   type ProjectListParams,

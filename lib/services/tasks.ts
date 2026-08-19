@@ -137,6 +137,8 @@ export async function listTasks(
 
   if (params.status !== "all") {
     query = query.eq("status", params.status);
+  } else if (params.hideComplete) {
+    query = query.neq("status", "completed");
   }
 
   if (params.priority !== "all") {

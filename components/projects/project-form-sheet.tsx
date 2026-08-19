@@ -34,7 +34,7 @@ import { currencies } from "@/lib/constants/currencies";
 import { addProjectAction, updateProjectAction } from "@/lib/actions/projects";
 import { type ProjectInput, projectSchema } from "@/lib/validations/project";
 import { priorities, projectStatuses, type Priority, type ProjectStatus } from "@/types/index";
-import { priorityLabels, projectStatusLabels } from "@/components/dashboard/status-badge";
+import { priorityLabels, projectStatusLabels } from "@/lib/constants/status-labels";
 
 export type ProjectFormClient = {
   id: string;

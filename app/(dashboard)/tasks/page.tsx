@@ -5,10 +5,9 @@ import { TaskFormSheet } from "@/components/tasks/task-form-sheet";
 import { TaskList } from "@/components/tasks/task-list";
 import { TaskPagination } from "@/components/tasks/task-pagination";
 import { TaskToolbar } from "@/components/tasks/task-toolbar";
-import { TaskViewToggle } from "@/components/tasks/task-view-toggle";
 import { Button } from "@/components/ui/button";
 import { requireWorkspace } from "@/lib/auth/workspace";
-import { parseTaskListParams } from "@/lib/tasks/params";
+import { hasTaskFilters, parseTaskListParams } from "@/lib/tasks/params";
 import { listProjectOptions } from "@/lib/services/projects";
 import { listAssigneeOptions, listTasks } from "@/lib/services/tasks";
 import { isStaffRole } from "@/types/index";
@@ -27,6 +26,7 @@ export default async function TasksPage({
     dir?: string;
     page?: string;
     view?: string;
+    hide?: string;
   }>;
 }) {
   const params = parseTaskListParams(await searchParams);
@@ -37,13 +37,7 @@ export default async function TasksPage({
     listProjectOptions(workspace.id, params.projectId || undefined),
     canManage ? listAssigneeOptions(workspace.id) : Promise.resolve([]),
   ]);
-  const hasFilters =
-    Boolean(params.q) ||
-    params.status !== "all" ||
-    params.priority !== "all" ||
-    Boolean(params.projectId) ||
-    Boolean(params.assigneeId) ||
-    params.due !== "all";
+  const filtered = hasTaskFilters(params);
   const addButton = canManage ? (
     <TaskFormSheet
       projects={projects}
@@ -68,21 +62,7 @@ export default async function TasksPage({
               : `Tasks on your projects with ${workspace.name}.`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <TaskViewToggle params={params} />
-          {canManage ? (
-            <TaskFormSheet
-              projects={projects}
-              assignees={assignees}
-              defaultProjectId={params.projectId || undefined}
-              trigger={
-                <Button>
-                  <Plus /> Add task
-                </Button>
-              }
-            />
-          ) : null}
-        </div>
+        {addButton}
       </div>
 
       <TaskToolbar params={params} projects={projects} assignees={assignees} hideAssignees={!canManage} />
@@ -95,11 +75,17 @@ export default async function TasksPage({
             canManage={canManage}
             projects={projects}
             assignees={assignees}
-            hasFilters={hasFilters}
+            hasFilters={filtered}
             emptyAction={addButton}
           />
         ) : (
-          <TaskBoard tasks={result.tasks} canManage={canManage} />
+          <TaskBoard
+            tasks={result.tasks}
+            canManage={canManage}
+            timeZone={workspace.timezone}
+            projects={projects}
+            assignees={assignees}
+          />
         )
       ) : (
         <TaskList
@@ -108,8 +94,9 @@ export default async function TasksPage({
           canManage={canManage}
           projects={projects}
           assignees={assignees}
-          hasFilters={hasFilters}
+          hasFilters={filtered}
           emptyAction={addButton}
+          variant={params.view === "table" ? "table" : "list"}
         />
       )}
 
